@@ -77,7 +77,7 @@ def main():
             # コンソールに結果を表示
             print(f'{subj=}, {pat=}, {p_softmax=}, {log_like_softmax=:.2f}, {p_matching=}, {log_like_matching=:.2f}\n')
 
-    """Excelに書き込む"""
+    # TODO: Excelファイルに書き込むプログラムを作成する
     # wte.write_to_excel(p_softmax, log_like_softmax, p_matching, log_like_matching)
 
 

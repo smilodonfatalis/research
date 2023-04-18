@@ -8,14 +8,14 @@
 import os
 
 def get_subj_file_path():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    subj_file_path = os.path.join(base_dir, 'data', 'subj*')
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    subj_file_path = os.path.join(base_dir, 'result', 'subj*')
     
     return subj_file_path
 
 
 def get_param_file_path():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     param_file_path = os.path.join(base_dir, 'params.xlsx')
     
     return param_file_path

@@ -89,11 +89,9 @@ def calc_log_like_test_ss_softmax(df_test, q_slf, beta, trial_size):
         idx_left = df_test[trial, 'idx_left']
         idx_right = df_test[trial, 'idx_right']
         img_choice = df_test[trial, 'img_choice']
-
-        # HACK: 冗長になっているのでできればdfの方で修正したい
-        # NOTE: img_choiceは、0が画像選択に間に合わなかった、1が左、2が右を選択したことになるが、
-        #       以下の計算では、画像を選択した場合に限り、その尤度を計算するため、0の場合は計算に含めず、
-        #       1か2の場合はインデックスとして使用するため、-1をしている。
+        
+        # NOTE: img_choiceは、-1が画像選択に間に合わなかった、0が左、1が右を選択したことになるが、
+        #       以下の計算では、画像を選択した場合に限り、その尤度を計算するため、-1の場合は計算に含めていない
         if img_choice == -1:
             continue
 
