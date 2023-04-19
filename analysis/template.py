@@ -16,7 +16,7 @@ def get_subj_file_path():
 
 def get_param_file_path():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    param_file_path = os.path.join(base_dir, 'params.xlsx')
+    param_file_path = os.path.join(base_dir, 'result', 'params.xlsx')
     
     return param_file_path
 
