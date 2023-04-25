@@ -36,42 +36,55 @@ seq_label   = ['slf', 'obs', 'test']
 rept_num = 10**4
 
 
-""" softmax """
+# 単純な関数の実装
 def softmax(x):
     return np.exp(x) / np.sum(np.exp(x), axis=0)
 
 
-def calc_q_slf(df_slf, q_trial_slf, q_block_slf, alpha, trial_size_slf):
-    """selfにおける行動履歴からQ値を計算する
+def matching(x):
+    return x / np.sum(x, axis=0)
+
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def calc_grad(beta):
+    pass
+
+
+""" softmax """
+def calc_q_train(df_train, q_trial_train, q_block_train, alpha, trial_size_train):
+    """trainにおける行動履歴からQ値を計算する
 
     Args:
-        df_slf (df): Q値を求めるためのデータが格納されたdf
-        q_trial_slf (list): トライアルごとのQ値
-        q_block_slf (defaultdict): ブロックごとのQ値。各ブロック終了時点でのq_trialの値を格納する
+        df_train (df): Q値を求めるためのデータが格納されたdf
+        q_trial_train (list): トライアルごとのQ値
+        q_block_train (defaultdict): ブロックごとのQ値。各ブロック終了時点でのq_trialの値を格納する
         alpha (float): 学習率
         trial_size_slf (int): シーケンスのトライアル数
 
     Returns:
         None: なし
     """
-    for trial in range(trial_size_slf):
-        reward = df_slf[trial, 'reward']
-        idx_choice = df_slf[trial, 'idx_choice']
+    for trial in range(trial_size_train):
+        reward = df_train[trial, 'reward']
+        idx_choice = df_train[trial, 'idx_choice']
 
         # Update Q values
-        q_trial_slf[idx_choice] += alpha * (reward - q_trial_slf[idx_choice])
+        q_trial_train[idx_choice] += alpha * (reward - q_trial_train[idx_choice])
 
         if (trial+1)%12==0:
-            q_block_slf[(trial+1)//12] = q_trial_slf.copy()
+            q_block_train[(trial+1)//12] = q_trial_train.copy()
 
 
-def calc_log_like_test_ss_softmax(df_test, q_slf, beta, trial_size):
-    """selfで求めたQ値と、testにおける行動履歴から、ss条件におけるQ値を計算する
+def calc_log_like_test_ss_softmax(df_test, q_train, beta, trial_size):
+    """slf/obsで求めたQ値と、testにおける行動履歴から、ss条件におけるQ値を計算する
         このとき、エージェントの方策にはsoftmax関数を用いる
 
     Args:
         df_test (df): Q値を求めるためのデータが格納されたtestのdf
-        q_slf (defaultdict): selfで計算したQ値
+        q_train (defaultdict): slf/obsで計算したQ値
         beta (float): 逆温度
         trial_size (int): シーケンスのトライアル数
 
@@ -84,7 +97,7 @@ def calc_log_like_test_ss_softmax(df_test, q_slf, beta, trial_size):
     for trial in range(trial_size):
         # 1 <= trial <= 6: q_slf[1], 7 <= trial <= 12: q_slf[2], 13 <= trial <= 18: q_slf[3]
         # q_slf[i]は、i番目のブロック終了時点でのQ値
-        q_test = q_slf[trial//6+1]
+        q_test = q_train[trial//6+1]
 
         idx_left = df_test[trial, 'idx_left']
         idx_right = df_test[trial, 'idx_right']
@@ -102,7 +115,7 @@ def calc_log_like_test_ss_softmax(df_test, q_slf, beta, trial_size):
         log_like_softmax_rand = 0
         
         for trial in range(trial_size):
-            q_test = q_slf[trial//6+1]
+            q_test = q_train[trial//6+1]
 
             idx_left = df_test[trial, 'idx_left']
             idx_right = df_test[trial, 'idx_right']
@@ -120,35 +133,31 @@ def calc_log_like_test_ss_softmax(df_test, q_slf, beta, trial_size):
 
 
 """ matching law """
-def matching(x):
-    return x / np.sum(x, axis=0)
-
-
-def calc_freq_slf(df_slf, freq_block_slf, block_size_slf):
-    """selfにおける行動履歴から、各画像の選択頻度を計算する
+def calc_freq_train(df_train, freq_block_train, block_size_train):
+    """slf/obsにおける行動履歴から、各画像の選択頻度を計算する
 
     Args:
-        df_slf (df): Q値を求めるためのデータが格納されたdf
-        freq_block_slf (defaultdict): 各画像の選択頻度
-        trial_size_slf (int): シーケンスのトライアル数
+        df_train (df): Q値を求めるためのデータが格納されたdf
+        freq_block_train (defaultdict): 各画像の選択頻度
+        trial_size_train (int): シーケンスのトライアル数
 
     Returns:
         None: なし
     """
     freq = [0] * (img_size+1)
-    for block in range(1, block_size_slf+1):
-        df = df_slf.filter(pl.col('block')<=block)
+    for block in range(1, block_size_train+1):
+        df = df_train.filter(pl.col('block')<=block)
         for img in range(1, img_size+1):
             freq[img] = df.filter(pl.col('idx_choice')==img).height
-        freq_block_slf[block] = freq.copy()
+        freq_block_train[block] = freq.copy()
 
 
-def calc_log_like_test_ss_matching(df_test, freq_slf, trial_size):
-    """selfで求めた選択頻度と、testにおける行動履歴から、ss条件における選択頻度を計算する
+def calc_log_like_test_ss_matching(df_test, freq_train, trial_size):
+    """slf/obsで求めた選択頻度と、testにおける行動履歴から、ss条件における選択頻度を計算する
 
     Args:
         df_test (df): 選択頻度を求めるためのデータが格納されたdf
-        freq_slf (defaultdict): selfで計算した選択頻度
+        freq_train (defaultdict): slf/obsで計算した選択頻度
         trial_size (int): シーケンスのトライアル数
 
     Returns:
@@ -162,7 +171,7 @@ def calc_log_like_test_ss_matching(df_test, freq_slf, trial_size):
         # 7 <= trial <= 12: freq_slf[2]
         # 13 <= trial <= 18: freq_slf[3]
         # q_slf[i]は、i番目のブロック終了時点でのQ値
-        freq_test = freq_slf[trial//6+1]
+        freq_test = freq_train[trial//6+1]
 
         idx_left = df_test[trial, 'idx_left']
         idx_right = df_test[trial, 'idx_right']
@@ -180,7 +189,7 @@ def calc_log_like_test_ss_matching(df_test, freq_slf, trial_size):
         log_like_matching_rand = 0
         
         for trial in range(trial_size):
-            freq_test = freq_slf[trial//6+1]
+            freq_test = freq_train[trial//6+1]
 
             idx_left = df_test[trial, 'idx_left']
             idx_right = df_test[trial, 'idx_right']

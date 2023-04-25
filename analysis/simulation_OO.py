@@ -26,16 +26,16 @@ cols = ['game_No', 'seq_No',
         't_reward_pres', 't_reward_resp']
 
 def main():
-    # シード数
+    # random seed
     seed = 0
     np.random.seed(seed) # 20, 5, 14
 
-    # グローバル変数
+    # variables
     subj_size = 15
     pat_size = 2
     block_size = 3
-    seq_size_slf = 12
-    seq_size_test_ss = 6
+    seq_size_obs = 12
+    seq_size_test_oo = 6
     img_size = 3
 
     rept_num = 10**3
@@ -53,17 +53,17 @@ def main():
     for subj in range(1, subj_size+1):
         for pat in range(1, pat_size+1):
             
-            df_slf = individual[subj][pat].slf
-            df_test_ss = individual[subj][pat].test.filter(pl.col('seq_pattern') == 'ss')
+            df_obs = individual[subj][pat].obs
+            df_test_oo = individual[subj][pat].test.filter(pl.col('seq_pattern') == 'oo')
             alpha = individual[subj][pat].alpha
             beta = individual[subj][pat].beta
 
             # softmaxモデルの計算
-            q_trial_slf = [0] * (img_size+1)
-            q_block_slf = defaultdict(int)
-            calc.calc_q_slf(df_slf, q_trial_slf, q_block_slf, alpha, seq_size_slf*block_size)
+            q_trial_obs = [0] * (img_size+1)
+            q_block_obs = defaultdict(int)
+            calc.calc_q_obs(df_obs, q_trial_obs, q_block_obs, alpha, seq_size_obs*block_size)
             log_like_softmax, p_softmax = calc.calc_log_like_test_ss_softmax(
-                                                df_test_ss, q_block_slf, beta, seq_size_test_ss*block_size
+                                                df_test_oo, q_block_obs, beta, seq_size_test_oo*block_size
                                             )
 
             # # matchingモデルの計算

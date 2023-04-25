@@ -26,11 +26,11 @@ cols = ['game_No', 'seq_No',
         't_reward_pres', 't_reward_resp']
 
 def main():
-    # シード数
+    # random seed
     seed = 0
     np.random.seed(seed) # 20, 5, 14
 
-    # グローバル変数
+    # variables
     subj_size = 15
     pat_size = 2
     block_size = 3

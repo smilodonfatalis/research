@@ -53,14 +53,16 @@ class Individual:
                         pat, 
                         group_num=self.group_num
                     )
+        self.slf = self.slf.with_columns(pl.col('conf')-6)
         self.slf = self.slf.with_columns(pl.when(pl.col('loc_choice')==30).then(1)
                                             .when(pl.col('loc_choice')==40).then(2)
                                             .otherwise(3).alias('idx_choice')
                                             )
-        self.slf = self.slf.with_columns(pl.when(pl.col('img_choice')==1).then(0)
-                                            .when(pl.col('img_choice')==2).then(1)
-                                            .otherwise(-1).alias('img_choice')
+        self.slf = self.slf.with_columns(pl.when(pl.col('loc_choice')==30).then(1)
+                                            .when(pl.col('loc_choice')==40).then(2)
+                                            .otherwise(3).alias('idx_choice')
                                             )
+        
 
         self.obs = convert_excel_result_into_df(
                         subj_file, 
@@ -69,6 +71,7 @@ class Individual:
                         pat, 
                         group_num=self.group_num
                     )
+        self.obs = self.obs.with_columns(pl.col('conf')-6)
         self.obs = self.obs.with_columns(pl.when(pl.col('loc_choice')==30).then(1)
                                             .when(pl.col('loc_choice')==40).then(2)
                                             .otherwise(3).alias('idx_choice')
@@ -85,6 +88,7 @@ class Individual:
                         pat, 
                         group_num=self.group_num
                     )
+        self.test = self.test.with_columns(pl.col('conf')-6)
         self.test = self.test.with_columns(pl.when(pl.col('seq_pattern')==1).then('ss')
                                             .when(pl.col('seq_pattern')==2).then('oo')
                                             .otherwise('so').cast(pl.Utf8).alias('seq_pattern')
@@ -101,6 +105,13 @@ class Individual:
         self.alpha = params[2*(subj-1) + (pat-1), 'alpha']
         self.beta = params[2*(subj-1) + (pat-1), 'beta']
         self.log_like = params[2*(subj-1) + (pat-1), 'log_likelihood']
+
+
+
+class Integrated(Individual):
+    def __init__(self, subj_file, params, seq_label, subj, pat):
+        super().__init__(subj_file, params, seq_label, subj, pat)
+
 
 
 def convert_excel_result_into_df(file_name, seq_label, subj, pat, group_num):
@@ -133,11 +144,9 @@ def convert_excel_result_into_df(file_name, seq_label, subj, pat, group_num):
 def generate_individual_data_instance():
     """被験者のデータを取得する"""
     subj_file_path = tp.get_subj_file_path()
-    # subj_files = glob.glob('/Users/strix_uralensis/Documents/Experiment/analysis/data/subj*')
     subj_files = glob.glob(subj_file_path)
     subj_files.sort()
 
-    # param_file = '/Users/strix_uralensis/Documents/Experiment/analysis/data/params.xlsx'
     param_file = tp.get_param_file_path()
     param = pl.read_excel(
                 param_file, 
