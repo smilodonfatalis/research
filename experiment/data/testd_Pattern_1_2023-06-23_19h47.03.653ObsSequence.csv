@@ -1,0 +1,17 @@
+﻿obs_condition,obs_pair_pat,obs_order_pat,obs_pos_chosen,obs_conf,obs_reward,obs_img_time,obs_conf_time,n,order
+0,1,1,left,low,0,0.1,0.1,1.0,0.0
+0,2,2,right,high,0,0.1,0.1,1.0,1.0
+0,3,1,left,low,0,0.1,0.1,1.0,2.0
+0,2,1,right,high,0,0.1,0.1,1.0,3.0
+0,1,2,left,low,0,0.1,0.1,1.0,4.0
+0,3,2,right,high,0,0.1,0.1,1.0,5.0
+0,1,1,left,low,0,0.1,0.1,1.0,6.0
+0,3,1,right,high,0,0.1,0.1,1.0,7.0
+0,2,2,left,low,0,0.1,0.1,1.0,8.0
+
+extraInfo
+participant,testd
+date,2023-06-23_19h47.03.653
+expName,Pattern_1
+psychopyVersion,2022.2.4
+frameRate,None

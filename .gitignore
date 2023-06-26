@@ -1,5 +1,10 @@
 __pycache__
-
+result/
+experiment/test.py
+experiment/test.png
+experiment/subj*
+experiment/sequences/*.icloud
+playground.ipynb
 
 
 # Byte-compiled / optimized / DLL files
