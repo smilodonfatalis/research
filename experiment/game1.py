@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import psychopy
-psychopy.useVersion('2022.2.5')
+psychopy.useVersion('2022.2.4')
 
 
 # --- Import packages ---
@@ -30,7 +30,18 @@ import pandas as pd
 
 # Global variables
 WINDOW_SIZE = [960, 540]
+isFullScr = False
 # Time
+TASK_TEST_TIME = 0.3
+IMG_TIME = TASK_TEST_TIME
+CONF_TIME = TASK_TEST_TIME
+REWARD_TIME = 2.0
+FEEDBACK_TIME = 1.0
+INSTR_TIME = TASK_TEST_TIME
+FIXATION_TIME = 0.5
+STANDBY_TIME = 3.0
+APPRECIATION_TIME = 5.0
+
 IMG_TIME = 5.0
 CONF_TIME = 3.0
 REWARD_TIME = 2.0
@@ -75,8 +86,12 @@ TEXT_POS = (0, 0)
 TEXT_SIZE = 48
 TEXT_COLOR = 'white'
 
-FIXATION = '+'
-FIXATION_SIZE = 60
+# FIXATION = '+'
+# FIXATION_SIZE = 60
+FIXATION_SIZE = (30, 30)
+FIXATION_POS = (0, 0)
+FIXATION_COLOR = 'white'
+FIXATION_WIDTH = 0.1
 
 NOT_DISCLOSED = '?'
 FAILURE = 'F'
@@ -113,7 +128,7 @@ def get_idx(mean):
 _thisDir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(_thisDir)
 # Store info about the experiment session
-psychopyVersion = '2022.2.5'
+psychopyVersion = '2022.2.4'
 expName = 'Pattern_1'  # from the Builder filename that created this script
 expInfo = {
     'participant': 'test',
@@ -144,7 +159,7 @@ frameTolerance = 0.001  # how close to onset before 'same' frame
 
 # --- Setup the Window ---
 win = visual.Window(
-    size=WINDOW_SIZE, fullscr=False, screen=0, 
+    size=WINDOW_SIZE, fullscr=isFullScr, screen=0, 
     winType='pyglet', allowStencil=False,
     monitor='screen1', color=[-1.000,-1.000,-1.000], colorSpace='rgb',
     blendMode='avg', useFBO=True, 
@@ -169,7 +184,7 @@ ioServer = io.launchHubServer(window=win, **ioConfig)
 eyetracker = None
 
 # create a default keyboard (e.g. to check for escape)
-# defaultKeyboard = keyboard.Keyboard(backend='iohub')
+defaultKeyboard = keyboard.Keyboard(backend='iohub')
 
 """============================================================="""
 # --- Initialize components for Routine "Init" ---
@@ -224,7 +239,7 @@ test_img = TestImg(slf_img, obs_img)
 
 # Create files to store data
 get_current_time = datetime.datetime.now() # Get time in the form of "yyyy-mm-dd hh:mm:ss"
-out_name = f'subj_{participant}_1_{get_current_time:%y%m%d%H%M}' 
+out_name = f'subj_{participant}_game1_{get_current_time:%y%m%d%H%M}' 
             # participant_yyyymmddというファイル名
 
 # Define sheet names and data table
@@ -239,14 +254,36 @@ test_data_table = []
 # Create matlab file(dict)
 out_dict = {'slf1':slf_data_table, 'obs1':obs_data_table, 'test1':test_data_table}
 
+
 # Create excel file
+cols = ['block_num', 'trial_num', 'seq_type', 'seq_trial_num', 
+        'condition', 'pair_pat', 'order_pat', 
+        'mean_left', 'mean_right', 'sd', 
+        'idx_left', 'idx_right',
+        'pos_correct', 'mean_correct', 'idx_correct', 
+        'pos_chosen', 'mean_chosen', 'idx_chosen',  
+        'conf_pat', 'conf', 'acc', 'reward',
+        'img_time', 'conf_time', 
+        'img_pres_time', 'img_resp_time',
+        'conf_pres_time', 'conf_resp_time',
+        'reward_pres_time', 'reward_resp_time']
+
 out_xlsx = out_name + ".xlsx"
 out_book = Workbook()
 #out_book = load_workbook(filename=out_xlsx)
 out_book.create_sheet(index=0, title=slf_sheet)
 out_book.create_sheet(index=1, title=obs_sheet)
 out_book.create_sheet(index=2, title=test_sheet)
+
+for i in range(3):
+    sheet_name = out_book.sheetnames[i]
+    sheet = out_book[sheet_name]
+    for j in range(1, len(cols)+1):
+        sheet.cell(1, j, value=cols[j-1])
 out_book.save(out_xlsx)
+
+
+"""============================================================="""
 STANDBY_TEXT = visual.TextStim(win=win, name='STANDBY_TEXT',
     text='Press ‘space’ to start',
     font=TEXT_FONT,
@@ -273,16 +310,26 @@ SLF_INSTR = visual.TextStim(
 
 """============================================================="""
 # --- Initialize components for Routine "SlfChoice" ---
-SLF_FIX1 = visual.TextStim(
+# SLF_IMG_FIX = visual.TextStim(
+#     win=win, 
+#     name='SLF_IMG_FIX',
+#     text=FIXATION,
+#     font=TEXT_FONT,
+#     pos=TEXT_POS, 
+#     height=FIXATION_SIZE, 
+#     color=TEXT_COLOR, 
+#     wrapWidth=None, ori=0, colorSpace='rgb', opacity=1, languageStyle='LTR',
+#     depth=-1.0)
+SLF_IMG_FIX = visual.ShapeStim(
     win=win, 
-    name='SLF_FIX1',
-    text=FIXATION,
-    font=TEXT_FONT,
-    pos=TEXT_POS, 
-    height=FIXATION_SIZE, 
-    color=TEXT_COLOR, 
-    wrapWidth=None, ori=0, colorSpace='rgb', opacity=1, languageStyle='LTR',
-    depth=-1.0)
+    name='SLF_IMG_FIX',
+    vertices='cross',
+    size=FIXATION_SIZE, 
+    pos=FIXATION_POS,
+    lineColor=FIXATION_COLOR, 
+    fillColor=FIXATION_COLOR,
+    anchor='center', ori=0, lineWidth=FIXATION_WIDTH, colorSpace='rgb', opacity=1, interpolate=True,
+    depth=0.0)
 
 SLF_IMG_LEFT = visual.ImageStim(
     win=win,
@@ -311,15 +358,25 @@ SLF_IMG_RESP = keyboard.Keyboard()
 
 """============================================================="""
 # --- Initialize components for Routine "SlfChoiceFb" ---
-SLF_FIX2 = visual.TextStim(
+# SLF_IMGFB_FIX = visual.TextStim(
+#     win=win, 
+#     name='SLF_IMGFB_FIX',
+#     text=FIXATION,
+#     font=TEXT_FONT,
+#     pos=TEXT_POS, 
+#     height=FIXATION_SIZE, 
+#     color=TEXT_COLOR, 
+#     wrapWidth=None, ori=0, colorSpace='rgb', opacity=None, languageStyle='LTR',
+#     depth=0.0)
+SLF_IMGFB_FIX = visual.ShapeStim(
     win=win, 
-    name='SLF_FIX2',
-    text=FIXATION,
-    font=TEXT_FONT,
-    pos=TEXT_POS, 
-    height=FIXATION_SIZE, 
-    color=TEXT_COLOR, 
-    wrapWidth=None, ori=0, colorSpace='rgb', opacity=None, languageStyle='LTR',
+    name='SLF_IMGFB_FIX',
+    vertices='cross',
+    size=FIXATION_SIZE, 
+    pos=FIXATION_POS,
+    lineColor=FIXATION_COLOR, 
+    fillColor=FIXATION_COLOR,
+    anchor='center', ori=0, lineWidth=FIXATION_WIDTH, colorSpace='rgb', opacity=1, interpolate=True,
     depth=0.0)
 
 SLF_IMGFB_FRAME = visual.Rect(
@@ -358,6 +415,17 @@ SLF_IMGFB_IMG_RIGHT = visual.ImageStim(
 
 """============================================================="""
 # --- Initialize components for Routine "SlfConf" ---
+SLF_CONF_FIX = visual.ShapeStim(
+    win=win, 
+    name='SLF_CONF_FIX',
+    vertices='cross',
+    size=FIXATION_SIZE, 
+    pos=FIXATION_POS,
+    lineColor=FIXATION_COLOR, 
+    fillColor=FIXATION_COLOR,
+    anchor='center', ori=0, lineWidth=FIXATION_WIDTH, colorSpace='rgb', opacity=1, interpolate=True,
+    depth=0.0)
+
 SLF_CONF_LOW_BOX = visual.Rect(
     win=win, 
     name='SLF_CONF_LOW_BOX',
@@ -407,6 +475,17 @@ SLF_CONF_RESP = keyboard.Keyboard()
 
 """============================================================="""
 # --- Initialize components for Routine "SlfConfFb" ---
+SLF_CONFFB_FIX = visual.ShapeStim(
+    win=win, 
+    name='SLF_CONFFB_FIX',
+    vertices='cross',
+    size=FIXATION_SIZE, 
+    pos=FIXATION_POS,
+    lineColor=FIXATION_COLOR, 
+    fillColor=FIXATION_COLOR,
+    anchor='center', ori=0, lineWidth=FIXATION_WIDTH, colorSpace='rgb', opacity=1, interpolate=True,
+    depth=0.0)
+
 SLF_CONFFB_FRAME = visual.Rect(
     win=win, 
     name='SLF_CONFFB_FRAME',
@@ -415,12 +494,12 @@ SLF_CONFFB_FRAME = visual.Rect(
     pos=[0,0], 
     lineColor=SLF_COLOR, 
     fillColor=SLF_COLOR, 
-    anchor='center', ori=0, lineWidth=1.0, colorSpace='rgb', opacity=1.0, interpolate=True,
+    anchor='center', ori=0, lineWidth=20, colorSpace='rgb', opacity=1, interpolate=True,
     depth=0.0)
 
-SLF_CONFFB_CONF_LOW_BOX = visual.Rect(
+SLF_CONFFB_LOW_BOX = visual.Rect(
     win=win, 
-    name='SLF_CONFFB_CONF_LOW_BOX',
+    name='SLF_CONFFB_LOW_BOX',
     width=CONF_SIZE[0], 
     height=CONF_SIZE[1],
     pos=CONF_POS_LEFT, 
@@ -429,8 +508,8 @@ SLF_CONFFB_CONF_LOW_BOX = visual.Rect(
     anchor='center', ori=0, lineWidth=1.0, colorSpace='rgb', opacity=1.0, interpolate=True,
     depth=-1.0)
 
-SLF_CONFFB_CONF_LOW_TEXT = visual.TextStim(
-    win=win, name='SLF_CONFFB_CONF_LOW_TEXT',
+SLF_CONFFB_LOW_TEXT = visual.TextStim(
+    win=win, name='SLF_CONFFB_LOW_TEXT',
     text=CONF_TEXT_LOW,
     font=TEXT_FONT,
     pos=CONF_POS_LEFT, 
@@ -439,9 +518,9 @@ SLF_CONFFB_CONF_LOW_TEXT = visual.TextStim(
     wrapWidth=None, ori=0, colorSpace='rgb', opacity=1.0, languageStyle='LTR',
     depth=-2.0)
 
-SLF_CONFFB_CONF_HIGH_BOX = visual.Rect(
+SLF_CONFFB_HIGH_BOX = visual.Rect(
     win=win, 
-    name='SLF_CONFFB_CONF_HIGH_BOX',
+    name='SLF_CONFFB_HIGH_BOX',
     width=CONF_SIZE[0], 
     height=CONF_SIZE[1],
     pos=CONF_POS_RIGHT, 
@@ -450,8 +529,8 @@ SLF_CONFFB_CONF_HIGH_BOX = visual.Rect(
     anchor='center', ori=0, lineWidth=1.0, colorSpace='rgb', opacity=1.0, interpolate=True,
     depth=-3.0)
 
-SLF_CONFFB_CONF_HIGH_TEXT = visual.TextStim(
-    win=win, name='SLF_CONFFB_CONF_HIGH_TEXT',
+SLF_CONFFB_HIGH_TEXT = visual.TextStim(
+    win=win, name='SLF_CONFFB_HIGH_TEXT',
     text=CONF_TEXT_HIGH,
     font=TEXT_FONT,
     pos=CONF_POS_RIGHT, 
@@ -525,16 +604,16 @@ OBS_INSTR = visual.TextStim(
 
 """============================================================="""
 # --- Initialize components for Routine "ObsChoice" ---
-OBS_FIX = visual.TextStim(
+OBS_IMG_FIX = visual.ShapeStim(
     win=win, 
-    name='OBS_FIX',
-    text=FIXATION,
-    font=TEXT_FONT,
-    pos=TEXT_POS, 
-    height=FIXATION_SIZE, 
-    color=TEXT_COLOR, 
-    wrapWidth=None, ori=0, colorSpace='rgb', opacity=1, languageStyle='LTR',
-    depth=-1.0)
+    name='OBS_IMG_FIX',
+    vertices='cross',
+    size=FIXATION_SIZE, 
+    pos=FIXATION_POS,
+    lineColor=FIXATION_COLOR, 
+    fillColor=FIXATION_COLOR,
+    anchor='center', ori=0, lineWidth=FIXATION_WIDTH, colorSpace='rgb', opacity=1, interpolate=True,
+    depth=0.0)
 
 OBS_IMGFB_FRAME = visual.Rect(
     win=win, 
@@ -572,6 +651,17 @@ OBS_IMG_RIGHT = visual.ImageStim(
 
 """============================================================="""
 # --- Initialize components for Routine "ObsConf" ---
+OBS_CONF_FIX = visual.ShapeStim(
+    win=win, 
+    name='OBS_CONF_FIX',
+    vertices='cross',
+    size=FIXATION_SIZE, 
+    pos=FIXATION_POS,
+    lineColor=FIXATION_COLOR, 
+    fillColor=FIXATION_COLOR,
+    anchor='center', ori=0, lineWidth=FIXATION_WIDTH, colorSpace='rgb', opacity=1, interpolate=True,
+    depth=0.0)
+
 OBS_CONFFB_FRAME = visual.Rect(
     win=win, 
     name='OBS_CONFFB_FRAME',
@@ -583,7 +673,7 @@ OBS_CONFFB_FRAME = visual.Rect(
     anchor='center', ori=0, lineWidth=1.0, colorSpace='rgb', opacity=1.0, interpolate=True,
     depth=0.0)
 
-OBS_CONF_LOW = visual.Rect(
+OBS_CONF_LOW_BOX = visual.Rect(
     win=win, 
     name='OBS_CONF_LOW',
     width=IMG_SIZE[0], 
@@ -682,14 +772,26 @@ TEST_INSTR = visual.TextStim(win=win, name='TEST_INSTR',
 
 """============================================================="""
 # --- Initialize components for Routine "TestChoice" ---
-TEST_FIX1 = visual.TextStim(win=win, name='TEST_FIX1',
-    text=FIXATION,
-    font=TEXT_FONT,
-    pos=TEXT_POS, 
-    height=FIXATION_SIZE, 
-    color=IMG_COLOR, 
-    wrapWidth=None, ori=0, colorSpace='rgb', opacity=1, languageStyle='LTR',
-    depth=-1.0)
+# TEST_IMG_FIX = visual.TextStim(
+#     win=win, 
+#     name='TEST_IMG_FIX',
+#     text=FIXATION,
+#     font=TEXT_FONT,
+#     pos=TEXT_POS, 
+#     height=FIXATION_SIZE, 
+#     color=IMG_COLOR, 
+#     wrapWidth=None, ori=0, colorSpace='rgb', opacity=1, languageStyle='LTR',
+#     depth=-1.0)
+TEST_IMG_FIX = visual.ShapeStim(
+    win=win, 
+    name='TEST_IMG_FIX',
+    vertices='cross',
+    size=FIXATION_SIZE, 
+    pos=FIXATION_POS,
+    lineColor=FIXATION_COLOR, 
+    fillColor=FIXATION_COLOR,
+    anchor='center', ori=0, lineWidth=FIXATION_WIDTH, colorSpace='rgb', opacity=1, interpolate=True,
+    depth=0.0)
 
 TEST_IMG_LEFT = visual.ImageStim(
     win=win,
@@ -718,15 +820,25 @@ TEST_IMG_RESP = keyboard.Keyboard()
 
 """============================================================="""
 # --- Initialize components for Routine "TestChoiceFb" ---
-TEST_FIX2 = visual.TextStim(
+# TEST_IMGFB_FIX = visual.TextStim(
+#     win=win, 
+#     name='TEST_IMGFB_FIX',
+#     text=FIXATION,
+#     font=TEXT_FONT,
+#     pos=TEXT_POS, 
+#     height=FIXATION_SIZE,
+#     color=TEXT_COLOR,  
+#     wrapWidth=None, ori=0, colorSpace='rgb', opacity=None, languageStyle='LTR',
+#     depth=0.0)
+TEST_IMGFB_FIX = visual.ShapeStim(
     win=win, 
-    name='TEST_FIX2',
-    text=FIXATION,
-    font=TEXT_FONT,
-    pos=TEXT_POS, 
-    height=FIXATION_SIZE,
-    color=TEXT_COLOR,  
-    wrapWidth=None, ori=0, colorSpace='rgb', opacity=None, languageStyle='LTR',
+    name='TEST_IMGFB_FIX',
+    vertices='cross',
+    size=FIXATION_SIZE, 
+    pos=FIXATION_POS,
+    lineColor=FIXATION_COLOR, 
+    fillColor=FIXATION_COLOR,
+    anchor='center', ori=0, lineWidth=FIXATION_WIDTH, colorSpace='rgb', opacity=1, interpolate=True,
     depth=0.0)
 
 TEST_IMGFB_FRAME = visual.Rect(
@@ -765,6 +877,17 @@ TEST_IMGFB_IMG_RIGHT = visual.ImageStim(
 
 """============================================================="""
 # --- Initialize components for Routine "TestConf" ---
+TEST_CONF_FIX = visual.ShapeStim(
+    win=win, 
+    name='TEST_CONF_FIX',
+    vertices='cross',
+    size=FIXATION_SIZE, 
+    pos=FIXATION_POS,
+    lineColor=FIXATION_COLOR, 
+    fillColor=FIXATION_COLOR,
+    anchor='center', ori=0, lineWidth=FIXATION_WIDTH, colorSpace='rgb', opacity=1, interpolate=True,
+    depth=0.0)
+
 TEST_CONF_LOW_BOX = visual.Rect(
     win=win, 
     name='TEST_CONF_LOW_BOX',
@@ -814,6 +937,17 @@ TEST_CONF_RESP = keyboard.Keyboard()
 
 """============================================================="""
 # --- Initialize components for Routine "TestConfFb" ---
+TEST_CONFFB_FIX = visual.ShapeStim(
+    win=win, 
+    name='TEST_CONFFB_FIX',
+    vertices='cross',
+    size=FIXATION_SIZE, 
+    pos=FIXATION_POS,
+    lineColor=FIXATION_COLOR, 
+    fillColor=FIXATION_COLOR,
+    anchor='center', ori=0, lineWidth=FIXATION_WIDTH, colorSpace='rgb', opacity=1, interpolate=True,
+    depth=0.0)
+
 TEST_CONFFB_FRAME = visual.Rect(
     win=win, 
     name='TEST_CONFFB_FRAME',
@@ -825,9 +959,9 @@ TEST_CONFFB_FRAME = visual.Rect(
     anchor='center', ori=0, lineWidth=1.0, colorSpace='rgb', opacity=1.0, interpolate=True,
     depth=0.0)
 
-TEST_CONFFB_CONF_LOW_BOX = visual.Rect(
+TEST_CONFFB_LOW_BOX = visual.Rect(
     win=win, 
-    name='TEST_CONFFB_CONF_LOW_BOX',
+    name='TEST_CONFFB_LOW_BOX',
     width=CONF_SIZE[0], 
     height=CONF_SIZE[1],
     pos=CONF_POS_LEFT, 
@@ -836,9 +970,9 @@ TEST_CONFFB_CONF_LOW_BOX = visual.Rect(
     anchor='center', ori=0, lineWidth=1.0, colorSpace='rgb', opacity=1.0, interpolate=True,
     depth=-1.0)
 
-TEST_CONFFB_CONF_LOW_TEXT = visual.TextStim(
+TEST_CONFFB_LOW_TEXT = visual.TextStim(
     win=win, 
-    name='TEST_CONFFB_CONF_LOW_TEXT',
+    name='TEST_CONFFB_LOW_TEXT',
     text=CONF_TEXT_LOW,
     font=TEXT_FONT,
     pos=CONF_POS_LEFT, 
@@ -847,9 +981,9 @@ TEST_CONFFB_CONF_LOW_TEXT = visual.TextStim(
     wrapWidth=None, ori=0, colorSpace='rgb', opacity=1.0, languageStyle='LTR',
     depth=-2.0)
 
-TEST_CONFFB_CONF_HIGH_BOX = visual.Rect(
+TEST_CONFFB_HIGH_BOX = visual.Rect(
     win=win, 
-    name='TEST_CONFFB_CONF_HIGH_BOX',
+    name='TEST_CONFFB_HIGH_BOX',
     width=CONF_SIZE[0], 
     height=CONF_SIZE[1],
     pos=CONF_POS_RIGHT, 
@@ -858,9 +992,9 @@ TEST_CONFFB_CONF_HIGH_BOX = visual.Rect(
     anchor='center', ori=0, lineWidth=1.0, colorSpace='rgb', opacity=1.0, interpolate=True,
     depth=-3.0)
 
-TEST_CONFFB_CONF_HIGH_TEXT = visual.TextStim(
+TEST_CONFFB_HIGH_TEXT = visual.TextStim(
     win=win, 
-    name='TEST_CONFFB_CONF_HIGH_TEXT',
+    name='TEST_CONFFB_HIGH_TEXT',
     text=CONF_TEXT_HIGH,
     font=TEXT_FONT,
     pos=CONF_POS_RIGHT, 
@@ -1041,9 +1175,8 @@ while continueRoutine:
             continueRoutine = False
     
     # check for quit (typically the Esc key)
-    # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-    #     core.quit()
-    if endExpNow:
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+    # if endExpNow:
         core.quit()
     
     # check if all components have finished
@@ -1084,7 +1217,7 @@ routineTimer.reset()
 BlockLoop = data.TrialHandler(
     nReps=1.0, method='sequential', 
     extraInfo=expInfo, originPath=-1,
-    trialList=data.importConditions('sequences/conditionPat1.xlsx'),
+    trialList=data.importConditions('sequences/game1/condition1.xlsx'),
     seed=None, name='BlockLoop')
 thisExp.addLoop(BlockLoop)  # add the loop to the experiment
 thisBlockLoop = BlockLoop.trialList[0]  # so we can initialise stimuli with some values
@@ -1100,7 +1233,44 @@ for thisBlockLoop in BlockLoop:
         for paramName in thisBlockLoop:
             exec('{} = thisBlockLoop[paramName]'.format(paramName))
     
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     """============================================================="""
     # --- Prepare to start Routine "SlfInstr" ---
     continueRoutine = True
@@ -1151,9 +1321,8 @@ for thisBlockLoop in BlockLoop:
                 SLF_INSTR.setAutoDraw(False)
         
         # check for quit (typically the Esc key)
-        # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-        #     core.quit()
-        if endExpNow:
+        if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        # if endExpNow:
             core.quit()
         
         # check if all components have finished
@@ -1187,7 +1356,7 @@ for thisBlockLoop in BlockLoop:
     SlfSequence = data.TrialHandler(
         nReps=1.0, method='sequential', 
         extraInfo=expInfo, originPath=-1,
-        trialList=data.importConditions('sequences/' + slf_file),
+        trialList=data.importConditions('sequences/game1/' + slf_file),
         seed=None, name='SlfSequence')
     thisExp.addLoop(SlfSequence)  # add the loop to the experiment
     thisSlfSequence = SlfSequence.trialList[0]  # so we can initialise stimuli with some values
@@ -1258,7 +1427,7 @@ for thisBlockLoop in BlockLoop:
         SLF_IMG_RESP.rt = []
         _SLF_IMG_RESP_allKeys = []
         # keep track of which components have finished
-        SlfChoiceComponents = [SLF_FIX1, 
+        SlfChoiceComponents = [SLF_IMG_FIX, 
                                SLF_IMG_LEFT, 
                                SLF_IMG_RIGHT, 
                                SLF_IMG_RESP]
@@ -1287,25 +1456,25 @@ for thisBlockLoop in BlockLoop:
             # update/draw components on each frame
             
             """============================================================="""
-            # *SLF_FIX1* updates
-            if SLF_FIX1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # *SLF_IMG_FIX* updates
+            if SLF_IMG_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                 # keep track of start time/frame for later
-                SLF_FIX1.frameNStart = frameN  # exact frame index
-                SLF_FIX1.tStart = t  # local t and not account for scr refresh
-                SLF_FIX1.tStartRefresh = tThisFlipGlobal  # on global time
-                win.timeOnFlip(SLF_FIX1, 'tStartRefresh')  # time at next scr refresh
+                SLF_IMG_FIX.frameNStart = frameN  # exact frame index
+                SLF_IMG_FIX.tStart = t  # local t and not account for scr refresh
+                SLF_IMG_FIX.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(SLF_IMG_FIX, 'tStartRefresh')  # time at next scr refresh
                 # add timestamp to datafile
-                thisExp.timestampOnFlip(win, 'SLF_FIX1.started')
-                SLF_FIX1.setAutoDraw(True)
-            if SLF_FIX1.status == STARTED:
+                thisExp.timestampOnFlip(win, 'SLF_IMG_FIX.started')
+                SLF_IMG_FIX.setAutoDraw(True)
+            if SLF_IMG_FIX.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > SLF_FIX1.tStartRefresh + IMG_TIME+FIXATION_TIME-frameTolerance:
+                if tThisFlipGlobal > SLF_IMG_FIX.tStartRefresh + IMG_TIME+FIXATION_TIME-frameTolerance:
                     # keep track of stop time/frame for later
-                    SLF_FIX1.tStop = t  # not accounting for scr refresh
-                    SLF_FIX1.frameNStop = frameN  # exact frame index
+                    SLF_IMG_FIX.tStop = t  # not accounting for scr refresh
+                    SLF_IMG_FIX.frameNStop = frameN  # exact frame index
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'SLF_FIX1.stopped')
-                    SLF_FIX1.setAutoDraw(False)
+                    thisExp.timestampOnFlip(win, 'SLF_IMG_FIX.stopped')
+                    SLF_IMG_FIX.setAutoDraw(False)
             
             """============================================================="""
             # *SLF_IMG_LEFT* updates
@@ -1390,9 +1559,8 @@ for thisBlockLoop in BlockLoop:
             
             """============================================================="""
             # check for quit (typically the Esc key)
-            # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-            #     core.quit()
-            if endExpNow:
+            if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+            # if endExpNow:
                 core.quit()
             
             # check if all components have finished
@@ -1421,7 +1589,7 @@ for thisBlockLoop in BlockLoop:
         
         """============================================================="""
         # Initialize in case skipping slf-conf
-        slf_conf = 0
+        slf_conf = 'none'
         t_conf_pres = 0
         t_conf_resp = 0
         is_slf_resp = 0
@@ -1433,7 +1601,7 @@ for thisBlockLoop in BlockLoop:
             slf_mean_chosen = slf_mean_left
             slf_idx_chosen = get_idx(slf_mean_chosen)
             slf_reward = slf_reward_left
-            slf_reward_text = str(round(slf_reward))
+            slf_reward_text = str(slf_reward)
             is_slf_resp = 1
         elif SLF_IMG_RESP.keys == right_key: 
             slf_img_fb_pos = IMG_POS_RIGHT
@@ -1441,7 +1609,7 @@ for thisBlockLoop in BlockLoop:
             slf_mean_chosen = slf_mean_right
             slf_idx_chosen = get_idx(slf_mean_chosen)
             slf_reward = slf_reward_right
-            slf_reward_text = str(round(slf_reward))
+            slf_reward_text = str(slf_reward)
             is_slf_resp = 1
         else:
             slf_img_fb_pos = IMG_POS_OUT
@@ -1485,7 +1653,7 @@ for thisBlockLoop in BlockLoop:
         SLF_IMGFB_IMG_LEFT.setImage(slf_img_left)
         SLF_IMGFB_IMG_RIGHT.setImage(slf_img_right)
         # keep track of which components have finished
-        SlfChoiceFbComponents = [SLF_FIX2, 
+        SlfChoiceFbComponents = [SLF_IMGFB_FIX, 
                                  SLF_IMGFB_FRAME, 
                                  SLF_IMGFB_IMG_LEFT, 
                                  SLF_IMGFB_IMG_RIGHT]
@@ -1514,25 +1682,25 @@ for thisBlockLoop in BlockLoop:
             # update/draw components on each frame
             
             """============================================================="""
-            # *SLF_FIX2* updates
-            if SLF_FIX2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # *SLF_IMGFB_FIX* updates
+            if SLF_IMGFB_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                 # keep track of start time/frame for later
-                SLF_FIX2.frameNStart = frameN  # exact frame index
-                SLF_FIX2.tStart = t  # local t and not account for scr refresh
-                SLF_FIX2.tStartRefresh = tThisFlipGlobal  # on global time
-                win.timeOnFlip(SLF_FIX2, 'tStartRefresh')  # time at next scr refresh
+                SLF_IMGFB_FIX.frameNStart = frameN  # exact frame index
+                SLF_IMGFB_FIX.tStart = t  # local t and not account for scr refresh
+                SLF_IMGFB_FIX.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(SLF_IMGFB_FIX, 'tStartRefresh')  # time at next scr refresh
                 # add timestamp to datafile
-                thisExp.timestampOnFlip(win, 'SLF_FIX2.started')
-                SLF_FIX2.setAutoDraw(True)
-            if SLF_FIX2.status == STARTED:
+                thisExp.timestampOnFlip(win, 'SLF_IMGFB_FIX.started')
+                SLF_IMGFB_FIX.setAutoDraw(True)
+            if SLF_IMGFB_FIX.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > SLF_FIX2.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                if tThisFlipGlobal > SLF_IMGFB_FIX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
                     # keep track of stop time/frame for later
-                    SLF_FIX2.tStop = t  # not accounting for scr refresh
-                    SLF_FIX2.frameNStop = frameN  # exact frame index
+                    SLF_IMGFB_FIX.tStop = t  # not accounting for scr refresh
+                    SLF_IMGFB_FIX.frameNStop = frameN  # exact frame index
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'SLF_FIX2.stopped')
-                    SLF_FIX2.setAutoDraw(False)
+                    thisExp.timestampOnFlip(win, 'SLF_IMGFB_FIX.stopped')
+                    SLF_IMGFB_FIX.setAutoDraw(False)
             
             """============================================================="""
             # *SLF_IMGFB_FRAME* updates
@@ -1599,9 +1767,8 @@ for thisBlockLoop in BlockLoop:
             
             """============================================================="""
             # check for quit (typically the Esc key)
-            # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-            #     core.quit()
-            if endExpNow:
+            if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+            # if endExpNow:
                 core.quit()
 
             # check if all components have finished
@@ -1654,6 +1821,21 @@ for thisBlockLoop in BlockLoop:
             continueRoutine = True
             routineForceEnded = False
             # update component parameters for each repeat
+            if slf_conf_pat == 1:
+                slf_conf_left = CONF_LOW
+                slf_conf_right = CONF_HIGH
+                slf_conf_low_pos = CONF_POS_LEFT
+                slf_conf_high_pos = CONF_POS_RIGHT
+            else:
+                slf_conf_left = CONF_HIGH
+                slf_conf_right = CONF_LOW
+                slf_conf_low_pos = CONF_POS_RIGHT
+                slf_conf_high_pos = CONF_POS_LEFT
+
+            SLF_CONF_LOW_BOX.setPos(slf_conf_low_pos)
+            SLF_CONF_LOW_TEXT.setPos(slf_conf_low_pos)
+            SLF_CONF_HIGH_BOX.setPos(slf_conf_high_pos)
+            SLF_CONF_HIGH_TEXT.setPos(slf_conf_high_pos)
             # Run 'Begin Routine' code from SLF_CONF_CODE
             # Get the presented time in slf-confidence
             t_conf_pres = onset.getTime()
@@ -1661,7 +1843,8 @@ for thisBlockLoop in BlockLoop:
             SLF_CONF_RESP.rt = []
             _SLF_CONF_RESP_allKeys = []
             # keep track of which components have finished
-            SlfConfComponents = [SLF_CONF_LOW_BOX, 
+            SlfConfComponents = [SLF_CONF_FIX,
+                                 SLF_CONF_LOW_BOX, 
                                  SLF_CONF_LOW_TEXT, 
                                  SLF_CONF_HIGH_BOX, 
                                  SLF_CONF_HIGH_TEXT, 
@@ -1689,6 +1872,27 @@ for thisBlockLoop in BlockLoop:
                 tThisFlipGlobal = win.getFutureFlipTime(clock=None)
                 frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
                 # update/draw components on each frame
+                
+                """============================================================="""
+                # *SLF_CONF_FIX* updates
+                if SLF_CONF_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                    # keep track of start time/frame for later
+                    SLF_CONF_FIX.frameNStart = frameN  # exact frame index
+                    SLF_CONF_FIX.tStart = t  # local t and not account for scr refresh
+                    SLF_CONF_FIX.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(SLF_CONF_FIX, 'tStartRefresh')  # time at next scr refresh
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'SLF_CONF_FIX.started')
+                    SLF_CONF_FIX.setAutoDraw(True)
+                if SLF_CONF_FIX.status == STARTED:
+                    # is it time to stop? (based on global clock, using actual start)
+                    if tThisFlipGlobal > SLF_CONF_FIX.tStartRefresh + CONF_TIME-frameTolerance:
+                        # keep track of stop time/frame for later
+                        SLF_CONF_FIX.tStop = t  # not accounting for scr refresh
+                        SLF_CONF_FIX.frameNStop = frameN  # exact frame index
+                        # add timestamp to datafile
+                        thisExp.timestampOnFlip(win, 'SLF_CONF_FIX.stopped')
+                        SLF_CONF_FIX.setAutoDraw(False)
                 
                 """============================================================="""
                 # *SLF_CONF_LOW_BOX* updates
@@ -1810,9 +2014,8 @@ for thisBlockLoop in BlockLoop:
                 
                 """============================================================="""
                 # check for quit (typically the Esc key)
-                # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-                #     core.quit()
-                if endExpNow:
+                if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+                # if endExpNow:
                     core.quit()
                 
                 # check if all components have finished
@@ -1844,10 +2047,10 @@ for thisBlockLoop in BlockLoop:
             # Receive confidence responses and determine feedback parameters
             if SLF_CONF_RESP.keys == left_key:
                 slf_conf_fb_pos = CONF_POS_LEFT
-                slf_conf = CONF_LOW
+                slf_conf = slf_conf_left
             elif SLF_CONF_RESP.keys == right_key: 
                 slf_conf_fb_pos = CONF_POS_RIGHT
-                slf_conf = CONF_HIGH
+                slf_conf = slf_conf_right
             else:
                 slf_conf_fb_pos = CONF_POS_OUT
                 slf_conf = CONF_NONE
@@ -1867,12 +2070,18 @@ for thisBlockLoop in BlockLoop:
             routineForceEnded = False
             # update component parameters for each repeat
             SLF_CONFFB_FRAME.setPos(slf_conf_fb_pos)
+            SLF_CONFFB_LOW_BOX.setPos(slf_conf_low_pos)
+            SLF_CONFFB_LOW_TEXT.setPos(slf_conf_low_pos)
+            SLF_CONFFB_HIGH_BOX.setPos(slf_conf_high_pos)
+            SLF_CONFFB_HIGH_TEXT.setPos(slf_conf_high_pos)
+            
             # keep track of which components have finished
-            SlfConfFbComponents = [SLF_CONFFB_FRAME, 
-                                   SLF_CONFFB_CONF_LOW_BOX, 
-                                   SLF_CONFFB_CONF_LOW_TEXT, 
-                                   SLF_CONFFB_CONF_HIGH_BOX, 
-                                   SLF_CONFFB_CONF_HIGH_TEXT]
+            SlfConfFbComponents = [SLF_CONFFB_FIX,
+                                   SLF_CONFFB_FRAME, 
+                                   SLF_CONFFB_LOW_BOX, 
+                                   SLF_CONFFB_LOW_TEXT, 
+                                   SLF_CONFFB_HIGH_BOX, 
+                                   SLF_CONFFB_HIGH_TEXT]
             
             for thisComponent in SlfConfFbComponents:
                 thisComponent.tStart = None
@@ -1898,6 +2107,27 @@ for thisBlockLoop in BlockLoop:
                 # update/draw components on each frame
                 
                 """============================================================="""
+                # *SLF_CONFFB_FIX* updates
+                if SLF_CONFFB_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                    # keep track of start time/frame for later
+                    SLF_CONFFB_FIX.frameNStart = frameN  # exact frame index
+                    SLF_CONFFB_FIX.tStart = t  # local t and not account for scr refresh
+                    SLF_CONFFB_FIX.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(SLF_CONFFB_FIX, 'tStartRefresh')  # time at next scr refresh
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'SLF_CONFFB_FIX.started')
+                    SLF_CONFFB_FIX.setAutoDraw(True)
+                if SLF_CONFFB_FIX.status == STARTED:
+                    # is it time to stop? (based on global clock, using actual start)
+                    if tThisFlipGlobal > SLF_CONFFB_FIX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                        # keep track of stop time/frame for later
+                        SLF_CONFFB_FIX.tStop = t  # not accounting for scr refresh
+                        SLF_CONFFB_FIX.frameNStop = frameN  # exact frame index
+                        # add timestamp to datafile
+                        thisExp.timestampOnFlip(win, 'SLF_CONFFB_FIX.stopped')
+                        SLF_CONFFB_FIX.setAutoDraw(False)
+                
+                """============================================================="""
                 # *SLF_CONFFB_FRAME* updates
                 if SLF_CONFFB_FRAME.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                     # keep track of start time/frame for later
@@ -1919,94 +2149,93 @@ for thisBlockLoop in BlockLoop:
                         SLF_CONFFB_FRAME.setAutoDraw(False)
                 
                 """============================================================="""
-                # *SLF_CONFFB_CONF_LOW_BOX* updates
-                if SLF_CONFFB_CONF_LOW_BOX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # *SLF_CONFFB_LOW_BOX* updates
+                if SLF_CONFFB_LOW_BOX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                     # keep track of start time/frame for later
-                    SLF_CONFFB_CONF_LOW_BOX.frameNStart = frameN  # exact frame index
-                    SLF_CONFFB_CONF_LOW_BOX.tStart = t  # local t and not account for scr refresh
-                    SLF_CONFFB_CONF_LOW_BOX.tStartRefresh = tThisFlipGlobal  # on global time
-                    win.timeOnFlip(SLF_CONFFB_CONF_LOW_BOX, 'tStartRefresh')  # time at next scr refresh
+                    SLF_CONFFB_LOW_BOX.frameNStart = frameN  # exact frame index
+                    SLF_CONFFB_LOW_BOX.tStart = t  # local t and not account for scr refresh
+                    SLF_CONFFB_LOW_BOX.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(SLF_CONFFB_LOW_BOX, 'tStartRefresh')  # time at next scr refresh
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'SLF_CONFFB_CONF_LOW_BOX.started')
-                    SLF_CONFFB_CONF_LOW_BOX.setAutoDraw(True)
-                if SLF_CONFFB_CONF_LOW_BOX.status == STARTED:
+                    thisExp.timestampOnFlip(win, 'SLF_CONFFB_LOW_BOX.started')
+                    SLF_CONFFB_LOW_BOX.setAutoDraw(True)
+                if SLF_CONFFB_LOW_BOX.status == STARTED:
                     # is it time to stop? (based on global clock, using actual start)
-                    if tThisFlipGlobal > SLF_CONFFB_CONF_LOW_BOX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                    if tThisFlipGlobal > SLF_CONFFB_LOW_BOX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
                         # keep track of stop time/frame for later
-                        SLF_CONFFB_CONF_LOW_BOX.tStop = t  # not accounting for scr refresh
-                        SLF_CONFFB_CONF_LOW_BOX.frameNStop = frameN  # exact frame index
+                        SLF_CONFFB_LOW_BOX.tStop = t  # not accounting for scr refresh
+                        SLF_CONFFB_LOW_BOX.frameNStop = frameN  # exact frame index
                         # add timestamp to datafile
-                        thisExp.timestampOnFlip(win, 'SLF_CONFFB_CONF_LOW_BOX.stopped')
-                        SLF_CONFFB_CONF_LOW_BOX.setAutoDraw(False)
+                        thisExp.timestampOnFlip(win, 'SLF_CONFFB_LOW_BOX.stopped')
+                        SLF_CONFFB_LOW_BOX.setAutoDraw(False)
                 
                 """============================================================="""
-                # *SLF_CONFFB_CONF_LOW_TEXT* updates
-                if SLF_CONFFB_CONF_LOW_TEXT.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # *SLF_CONFFB_LOW_TEXT* updates
+                if SLF_CONFFB_LOW_TEXT.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                     # keep track of start time/frame for later
-                    SLF_CONFFB_CONF_LOW_TEXT.frameNStart = frameN  # exact frame index
-                    SLF_CONFFB_CONF_LOW_TEXT.tStart = t  # local t and not account for scr refresh
-                    SLF_CONFFB_CONF_LOW_TEXT.tStartRefresh = tThisFlipGlobal  # on global time
-                    win.timeOnFlip(SLF_CONFFB_CONF_LOW_TEXT, 'tStartRefresh')  # time at next scr refresh
+                    SLF_CONFFB_LOW_TEXT.frameNStart = frameN  # exact frame index
+                    SLF_CONFFB_LOW_TEXT.tStart = t  # local t and not account for scr refresh
+                    SLF_CONFFB_LOW_TEXT.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(SLF_CONFFB_LOW_TEXT, 'tStartRefresh')  # time at next scr refresh
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'SLF_CONFFB_CONF_LOW_TEXT.started')
-                    SLF_CONFFB_CONF_LOW_TEXT.setAutoDraw(True)
-                if SLF_CONFFB_CONF_LOW_TEXT.status == STARTED:
+                    thisExp.timestampOnFlip(win, 'SLF_CONFFB_LOW_TEXT.started')
+                    SLF_CONFFB_LOW_TEXT.setAutoDraw(True)
+                if SLF_CONFFB_LOW_TEXT.status == STARTED:
                     # is it time to stop? (based on global clock, using actual start)
-                    if tThisFlipGlobal > SLF_CONFFB_CONF_LOW_TEXT.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                    if tThisFlipGlobal > SLF_CONFFB_LOW_TEXT.tStartRefresh + FEEDBACK_TIME-frameTolerance:
                         # keep track of stop time/frame for later
-                        SLF_CONFFB_CONF_LOW_TEXT.tStop = t  # not accounting for scr refresh
-                        SLF_CONFFB_CONF_LOW_TEXT.frameNStop = frameN  # exact frame index
+                        SLF_CONFFB_LOW_TEXT.tStop = t  # not accounting for scr refresh
+                        SLF_CONFFB_LOW_TEXT.frameNStop = frameN  # exact frame index
                         # add timestamp to datafile
-                        thisExp.timestampOnFlip(win, 'SLF_CONFFB_CONF_LOW_TEXT.stopped')
-                        SLF_CONFFB_CONF_LOW_TEXT.setAutoDraw(False)
+                        thisExp.timestampOnFlip(win, 'SLF_CONFFB_LOW_TEXT.stopped')
+                        SLF_CONFFB_LOW_TEXT.setAutoDraw(False)
                 
                 """============================================================="""
-                # *SLF_CONFFB_CONF_HIGH_BOX* updates
-                if SLF_CONFFB_CONF_HIGH_BOX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # *SLF_CONFFB_HIGH_BOX* updates
+                if SLF_CONFFB_HIGH_BOX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                     # keep track of start time/frame for later
-                    SLF_CONFFB_CONF_HIGH_BOX.frameNStart = frameN  # exact frame index
-                    SLF_CONFFB_CONF_HIGH_BOX.tStart = t  # local t and not account for scr refresh
-                    SLF_CONFFB_CONF_HIGH_BOX.tStartRefresh = tThisFlipGlobal  # on global time
-                    win.timeOnFlip(SLF_CONFFB_CONF_HIGH_BOX, 'tStartRefresh')  # time at next scr refresh
+                    SLF_CONFFB_HIGH_BOX.frameNStart = frameN  # exact frame index
+                    SLF_CONFFB_HIGH_BOX.tStart = t  # local t and not account for scr refresh
+                    SLF_CONFFB_HIGH_BOX.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(SLF_CONFFB_HIGH_BOX, 'tStartRefresh')  # time at next scr refresh
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'SLF_CONFFB_CONF_HIGH_BOX.started')
-                    SLF_CONFFB_CONF_HIGH_BOX.setAutoDraw(True)
-                if SLF_CONFFB_CONF_HIGH_BOX.status == STARTED:
+                    thisExp.timestampOnFlip(win, 'SLF_CONFFB_HIGH_BOX.started')
+                    SLF_CONFFB_HIGH_BOX.setAutoDraw(True)
+                if SLF_CONFFB_HIGH_BOX.status == STARTED:
                     # is it time to stop? (based on global clock, using actual start)
-                    if tThisFlipGlobal > SLF_CONFFB_CONF_HIGH_BOX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                    if tThisFlipGlobal > SLF_CONFFB_HIGH_BOX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
                         # keep track of stop time/frame for later
-                        SLF_CONFFB_CONF_HIGH_BOX.tStop = t  # not accounting for scr refresh
-                        SLF_CONFFB_CONF_HIGH_BOX.frameNStop = frameN  # exact frame index
+                        SLF_CONFFB_HIGH_BOX.tStop = t  # not accounting for scr refresh
+                        SLF_CONFFB_HIGH_BOX.frameNStop = frameN  # exact frame index
                         # add timestamp to datafile
-                        thisExp.timestampOnFlip(win, 'SLF_CONFFB_CONF_HIGH_BOX.stopped')
-                        SLF_CONFFB_CONF_HIGH_BOX.setAutoDraw(False)
+                        thisExp.timestampOnFlip(win, 'SLF_CONFFB_HIGH_BOX.stopped')
+                        SLF_CONFFB_HIGH_BOX.setAutoDraw(False)
                 
                 """============================================================="""
-                # *SLF_CONFFB_CONF_HIGH_TEXT* updates
-                if SLF_CONFFB_CONF_HIGH_TEXT.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # *SLF_CONFFB_HIGH_TEXT* updates
+                if SLF_CONFFB_HIGH_TEXT.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                     # keep track of start time/frame for later
-                    SLF_CONFFB_CONF_HIGH_TEXT.frameNStart = frameN  # exact frame index
-                    SLF_CONFFB_CONF_HIGH_TEXT.tStart = t  # local t and not account for scr refresh
-                    SLF_CONFFB_CONF_HIGH_TEXT.tStartRefresh = tThisFlipGlobal  # on global time
-                    win.timeOnFlip(SLF_CONFFB_CONF_HIGH_TEXT, 'tStartRefresh')  # time at next scr refresh
+                    SLF_CONFFB_HIGH_TEXT.frameNStart = frameN  # exact frame index
+                    SLF_CONFFB_HIGH_TEXT.tStart = t  # local t and not account for scr refresh
+                    SLF_CONFFB_HIGH_TEXT.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(SLF_CONFFB_HIGH_TEXT, 'tStartRefresh')  # time at next scr refresh
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'SLF_CONFFB_CONF_HIGH_TEXT.started')
-                    SLF_CONFFB_CONF_HIGH_TEXT.setAutoDraw(True)
-                if SLF_CONFFB_CONF_HIGH_TEXT.status == STARTED:
+                    thisExp.timestampOnFlip(win, 'SLF_CONFFB_HIGH_TEXT.started')
+                    SLF_CONFFB_HIGH_TEXT.setAutoDraw(True)
+                if SLF_CONFFB_HIGH_TEXT.status == STARTED:
                     # is it time to stop? (based on global clock, using actual start)
-                    if tThisFlipGlobal > SLF_CONFFB_CONF_HIGH_TEXT.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                    if tThisFlipGlobal > SLF_CONFFB_HIGH_TEXT.tStartRefresh + FEEDBACK_TIME-frameTolerance:
                         # keep track of stop time/frame for later
-                        SLF_CONFFB_CONF_HIGH_TEXT.tStop = t  # not accounting for scr refresh
-                        SLF_CONFFB_CONF_HIGH_TEXT.frameNStop = frameN  # exact frame index
+                        SLF_CONFFB_HIGH_TEXT.tStop = t  # not accounting for scr refresh
+                        SLF_CONFFB_HIGH_TEXT.frameNStop = frameN  # exact frame index
                         # add timestamp to datafile
-                        thisExp.timestampOnFlip(win, 'SLF_CONFFB_CONF_HIGH_TEXT.stopped')
-                        SLF_CONFFB_CONF_HIGH_TEXT.setAutoDraw(False)
+                        thisExp.timestampOnFlip(win, 'SLF_CONFFB_HIGH_TEXT.stopped')
+                        SLF_CONFFB_HIGH_TEXT.setAutoDraw(False)
                 
                 """============================================================="""
                 # check for quit (typically the Esc key)
-                # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-                #     core.quit()
-                if endExpNow:
+                if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+                # if endExpNow:
                     core.quit()
                 
                 # check if all components have finished
@@ -2175,9 +2404,8 @@ for thisBlockLoop in BlockLoop:
             
             """============================================================="""
             # check for quit (typically the Esc key)
-            # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-            #     core.quit()
-            if endExpNow:
+            if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+            # if endExpNow:
                 core.quit()
             
             # check if all components have finished
@@ -2216,7 +2444,7 @@ for thisBlockLoop in BlockLoop:
                                slf_idx_left, slf_idx_right,
                                slf_pos_correct, slf_mean_correct, slf_idx_correct, 
                                slf_pos_chosen, slf_mean_chosen, slf_idx_chosen,  
-                               slf_conf, slf_acc, slf_reward,
+                               slf_conf_pat, slf_conf, slf_acc, slf_reward,
                                np.round(slf_img_time, 3), np.round(slf_conf_time, 3), 
                                np.round(t_img_pres, 3), np.round(t_img_resp, 3),
                                np.round(t_conf_pres, 3), np.round(t_conf_resp, 3),
@@ -2227,7 +2455,7 @@ for thisBlockLoop in BlockLoop:
         slf_sheet_name = out_book.sheetnames[0]
         slf_sheet = out_book[slf_sheet_name]
         for i in range(1, len(slf_data_table[slf_trial_cnt-1])+1):
-            slf_sheet.cell(slf_trial_cnt, i, value = slf_data_table[slf_trial_cnt-1][i-1])
+            slf_sheet.cell(slf_trial_cnt+1, i, value = slf_data_table[slf_trial_cnt-1][i-1])
         out_book.save(out_xlsx)
         
         # Update slf-count
@@ -2336,9 +2564,8 @@ for thisBlockLoop in BlockLoop:
         
         """============================================================="""
         # check for quit (typically the Esc key)
-        # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-        #     core.quit()
-        if endExpNow:
+        if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        # if endExpNow:
             core.quit()
         
         # check if all components have finished
@@ -2371,7 +2598,7 @@ for thisBlockLoop in BlockLoop:
     ObsSequence = data.TrialHandler(
         nReps=1.0, method='sequential', 
         extraInfo=expInfo, originPath=-1,
-        trialList=data.importConditions('sequences/' + obs_file),
+        trialList=data.importConditions('sequences/game1/' + obs_file),
         seed=None, name='ObsSequence')
     thisExp.addLoop(ObsSequence)  # add the loop to the experiment
     thisObsSequence = ObsSequence.trialList[0]  # so we can initialise stimuli with some values
@@ -2395,6 +2622,39 @@ for thisBlockLoop in BlockLoop:
         # update component parameters for each repeat
         # Run 'Begin Routine' code from OBS_IMG_CODE
         # Determine the images and parameters based on the self record
+        obs_seq_type = OBS_SEQ_TYPE
+        
+        if obs_pair_pat==1:
+            if obs_order_pat==1:
+                obs_mean_left = MEAN_LIST[0]
+                obs_mean_right = MEAN_LIST[1]
+            else:
+                obs_mean_left = MEAN_LIST[1]
+                obs_mean_right = MEAN_LIST[0]
+        if obs_pair_pat==2:
+            if obs_order_pat==1:
+                obs_mean_left = MEAN_LIST[1]
+                obs_mean_right = MEAN_LIST[2]
+            else:
+                obs_mean_left = MEAN_LIST[2]
+                obs_mean_right = MEAN_LIST[1]
+        if obs_pair_pat==3:
+            if obs_order_pat==1:
+                obs_mean_left = MEAN_LIST[2]
+                obs_mean_right = MEAN_LIST[0]
+            else:
+                obs_mean_left = MEAN_LIST[0]
+                obs_mean_right = MEAN_LIST[2]
+        
+        if obs_mean_left > obs_mean_right:
+            obs_pos_correct = POS_LEFT
+            obs_mean_correct = obs_mean_left
+            obs_idx_correct = get_idx(obs_mean_left)
+        elif obs_mean_left < obs_mean_right:
+            obs_pos_correct = POS_RIGHT
+            obs_mean_correct = obs_mean_right
+            obs_idx_correct = get_idx(obs_mean_right)
+
         obs_idx_left = get_idx(obs_mean_left)
         obs_idx_right = get_idx(obs_mean_right)
         obs_img_left = obs_img[obs_idx_left]
@@ -2402,24 +2662,29 @@ for thisBlockLoop in BlockLoop:
         
         if obs_pos_chosen == POS_LEFT:
             obs_img_fb_pos = IMG_POS_LEFT
+            obs_mean_chosen = obs_mean_left
+            obs_idx_chosen = obs_idx_left
         elif obs_pos_chosen == POS_RIGHT:
             obs_img_fb_pos = IMG_POS_RIGHT
+            obs_mean_chosen = obs_mean_right
+            obs_idx_chosen = obs_idx_right
         else:
             obs_img_fb_pos = IMG_POS_OUT
+            obs_mean_chosen = 0
+            obs_idx_chosen = np.nan
 
-        if obs_conf == CONF_LOW:
-            obs_conf_fb_pos = CONF_POS_LEFT
-        elif obs_conf == CONF_HIGH:
-            obs_conf_fb_pos = CONF_POS_RIGHT
+        # Add points according to the response
+        if obs_pos_chosen == obs_pos_correct:
+            obs_acc = 1
         else:
-            obs_conf_fb_pos = CONF_POS_OUT
+            obs_acc = 0
             
-        OBS_IMGFB_FRAME.setPos(obs_img_pos)
+        OBS_IMGFB_FRAME.setPos(obs_img_fb_pos)
         # OBS_IMG_LEFT.setPos((-200, 0))
         OBS_IMG_LEFT.setImage(obs_img_left)
         OBS_IMG_RIGHT.setImage(obs_img_right)
         # keep track of which components have finished
-        ObsChoiceComponents = [OBS_FIX, 
+        ObsChoiceComponents = [OBS_IMG_FIX, 
                                OBS_IMGFB_FRAME, 
                                OBS_IMG_LEFT, 
                                OBS_IMG_RIGHT]
@@ -2448,25 +2713,25 @@ for thisBlockLoop in BlockLoop:
             # update/draw components on each frame
             
             """============================================================="""
-            # *OBS_FIX* updates
-            if OBS_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # *OBS_IMG_FIX* updates
+            if OBS_IMG_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                 # keep track of start time/frame for later
-                OBS_FIX.frameNStart = frameN  # exact frame index
-                OBS_FIX.tStart = t  # local t and not account for scr refresh
-                OBS_FIX.tStartRefresh = tThisFlipGlobal  # on global time
-                win.timeOnFlip(OBS_FIX, 'tStartRefresh')  # time at next scr refresh
+                OBS_IMG_FIX.frameNStart = frameN  # exact frame index
+                OBS_IMG_FIX.tStart = t  # local t and not account for scr refresh
+                OBS_IMG_FIX.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(OBS_IMG_FIX, 'tStartRefresh')  # time at next scr refresh
                 # add timestamp to datafile
-                thisExp.timestampOnFlip(win, 'OBS_FIX.started')
-                OBS_FIX.setAutoDraw(True)
-            if OBS_FIX.status == STARTED:
+                thisExp.timestampOnFlip(win, 'OBS_IMG_FIX.started')
+                OBS_IMG_FIX.setAutoDraw(True)
+            if OBS_IMG_FIX.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > OBS_FIX.tStartRefresh + obs_img_time + FEEDBACK_TIME + FIXATION_TIME-frameTolerance:
+                if tThisFlipGlobal > OBS_IMG_FIX.tStartRefresh + obs_img_time + FEEDBACK_TIME + FIXATION_TIME-frameTolerance:
                     # keep track of stop time/frame for later
-                    OBS_FIX.tStop = t  # not accounting for scr refresh
-                    OBS_FIX.frameNStop = frameN  # exact frame index
+                    OBS_IMG_FIX.tStop = t  # not accounting for scr refresh
+                    OBS_IMG_FIX.frameNStop = frameN  # exact frame index
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'OBS_FIX.stopped')
-                    OBS_FIX.setAutoDraw(False)
+                    thisExp.timestampOnFlip(win, 'OBS_IMG_FIX.stopped')
+                    OBS_IMG_FIX.setAutoDraw(False)
             
             """============================================================="""
             # *OBS_IMGFB_FRAME* updates
@@ -2533,9 +2798,8 @@ for thisBlockLoop in BlockLoop:
             
             """============================================================="""
             # check for quit (typically the Esc key)
-            # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-            #     core.quit()
-            if endExpNow:
+            if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+            # if endExpNow:
                 core.quit()
             
             # check if all components have finished
@@ -2567,9 +2831,28 @@ for thisBlockLoop in BlockLoop:
         continueRoutine = True
         routineForceEnded = False
         # update component parameters for each repeat
+        if obs_conf_pat == 1:
+            obs_conf_low_pos = CONF_POS_LEFT
+            obs_conf_high_pos = CONF_POS_RIGHT
+        else:
+            obs_conf_low_pos = CONF_POS_RIGHT
+            obs_conf_high_pos = CONF_POS_LEFT
+
+        if obs_conf == CONF_LOW:
+            obs_conf_fb_pos = obs_conf_low_pos
+        elif obs_conf == CONF_HIGH:
+            obs_conf_fb_pos = obs_conf_high_pos
+        else:
+            obs_conf_fb_pos = CONF_POS_OUT
+
+        OBS_CONF_LOW_BOX.setPos(obs_conf_low_pos)
+        OBS_CONF_LOW_TEXT.setPos(obs_conf_low_pos)
+        OBS_CONF_HIGH_BOX.setPos(obs_conf_high_pos)
+        OBS_CONF_HIGH_TEXT.setPos(obs_conf_high_pos)
         OBS_CONFFB_FRAME.setPos(obs_conf_fb_pos)
         # keep track of which components have finished
-        ObsConfComponents = [OBS_CONFFB_FRAME, 
+        ObsConfComponents = [OBS_CONF_FIX,
+                             OBS_CONFFB_FRAME, 
                              OBS_CONF_LOW_BOX, 
                              OBS_CONF_LOW_TEXT, 
                              OBS_CONF_HIGH_BOX, 
@@ -2598,8 +2881,29 @@ for thisBlockLoop in BlockLoop:
             # update/draw components on each frame
             
             """============================================================="""
+            # *OBS_CONF_FIX* updates
+            if OBS_CONF_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # keep track of start time/frame for later
+                OBS_CONF_FIX.frameNStart = frameN  # exact frame index
+                OBS_CONF_FIX.tStart = t  # local t and not account for scr refresh
+                OBS_CONF_FIX.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(OBS_CONF_FIX, 'tStartRefresh')  # time at next scr refresh
+                # add timestamp to datafile
+                thisExp.timestampOnFlip(win, 'OBS_CONF_FIX.started')
+                OBS_CONF_FIX.setAutoDraw(True)
+            if OBS_CONF_FIX.status == STARTED:
+                # is it time to stop? (based on global clock, using actual start)
+                if tThisFlipGlobal > OBS_CONF_FIX.tStartRefresh + obs_conf_time + FEEDBACK_TIME-frameTolerance:
+                    # keep track of stop time/frame for later
+                    OBS_CONF_FIX.tStop = t  # not accounting for scr refresh
+                    OBS_CONF_FIX.frameNStop = frameN  # exact frame index
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'OBS_CONF_FIX.stopped')
+                    OBS_CONF_FIX.setAutoDraw(False)
+            
+            """============================================================="""
             # *OBS_CONFFB_FRAME* updates
-            if OBS_CONFFB_FRAME.status == NOT_STARTED and tThisFlip >= CONF_TIME-frameTolerance:
+            if OBS_CONFFB_FRAME.status == NOT_STARTED and tThisFlip >= obs_conf_time -frameTolerance:
                 # keep track of start time/frame for later
                 OBS_CONFFB_FRAME.frameNStart = frameN  # exact frame index
                 OBS_CONFFB_FRAME.tStart = t  # local t and not account for scr refresh
@@ -2619,13 +2923,13 @@ for thisBlockLoop in BlockLoop:
                     OBS_CONFFB_FRAME.setAutoDraw(False)
             
             """============================================================="""
-            # *OBS_CONF_LOW* updates
+            # *OBS_CONF_LOW_BOX* updates
             if OBS_CONF_LOW_BOX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                 # keep track of start time/frame for later
                 OBS_CONF_LOW_BOX.frameNStart = frameN  # exact frame index
                 OBS_CONF_LOW_BOX.tStart = t  # local t and not account for scr refresh
                 OBS_CONF_LOW_BOX.tStartRefresh = tThisFlipGlobal  # on global time
-                win.timeOnFlip(OBS_CONF_LOW, 'tStartRefresh')  # time at next scr refresh
+                win.timeOnFlip(OBS_CONF_LOW_BOX, 'tStartRefresh')  # time at next scr refresh
                 # add timestamp to datafile
                 thisExp.timestampOnFlip(win, 'OBS_CONF_LOW_BOX.started')
                 OBS_CONF_LOW_BOX.setAutoDraw(True)
@@ -2704,9 +3008,8 @@ for thisBlockLoop in BlockLoop:
             
             """============================================================="""
             # check for quit (typically the Esc key)
-            # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-            #     core.quit()
-            if endExpNow:
+            if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+            # if endExpNow:
                 core.quit()
             
             # check if all components have finished
@@ -2856,9 +3159,8 @@ for thisBlockLoop in BlockLoop:
             
             """============================================================="""
             # check for quit (typically the Esc key)
-            # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-            #     core.quit()
-            if endExpNow:
+            if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+            # if endExpNow:
                 core.quit()
             
             # check if all components have finished
@@ -2883,13 +3185,20 @@ for thisBlockLoop in BlockLoop:
                 thisComponent.setAutoDraw(False)
         # Run 'End Routine' code from OBS_REWARD_TEXT_CODE
         # Output obs data
+        t_img_pres = 0
+        t_img_resp = 0
+        t_conf_pres = 0
+        t_conf_resp = 0
+        t_reward_pres = 0
+        t_reward_resp = 0
+
         obs_data_table.append([block_cnt, through_game_cnt, obs_seq_type, obs_trial_cnt, 
                                obs_condition, obs_pair_pat, obs_order_pat,
                                obs_mean_left, obs_mean_right, obs_sd,
                                obs_idx_left, obs_idx_right,
                                obs_pos_correct, obs_mean_correct, obs_idx_correct,
                                obs_pos_chosen, obs_mean_chosen, obs_idx_chosen,
-                               obs_conf, obs_acc, obs_reward, 
+                               obs_conf_pat, obs_conf, obs_acc, obs_reward, 
                                np.round(obs_img_time, 3), np.round(obs_conf_time, 3),
                                np.round(t_img_pres, 3), np.round(t_img_resp, 3),
                                np.round(t_conf_pres, 3), np.round(t_conf_resp, 3),
@@ -2900,7 +3209,7 @@ for thisBlockLoop in BlockLoop:
         obs_sheet_name = out_book.sheetnames[1]
         obs_sheet = out_book[obs_sheet_name]
         for i in range(1, len(obs_data_table[obs_trial_cnt-1])+1):
-            obs_sheet.cell(obs_trial_cnt, i, value = obs_data_table[obs_trial_cnt-1][i-1])
+            obs_sheet.cell(obs_trial_cnt+1, i, value = obs_data_table[obs_trial_cnt-1][i-1])
         out_book.save(out_xlsx)
         
         # Update obs-count
@@ -3006,9 +3315,8 @@ for thisBlockLoop in BlockLoop:
         
         """============================================================="""
         # check for quit (typically the Esc key)
-        # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-        #     core.quit()
-        if endExpNow:
+        if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        # if endExpNow:
             core.quit()
         
         # check if all components have finished
@@ -3041,7 +3349,7 @@ for thisBlockLoop in BlockLoop:
     TestSequence = data.TrialHandler(
         nReps=1.0, method='sequential', 
         extraInfo=expInfo, originPath=-1,
-        trialList=data.importConditions('sequences/' + test_file), # ok
+        trialList=data.importConditions('sequences/game1/' + test_file), # ok
         seed=None, name='TestSequence')
     thisExp.addLoop(TestSequence)  # add the loop to the experiment
     thisTestSequence = TestSequence.trialList[0]  # so we can initialise stimuli with some values
@@ -3064,6 +3372,7 @@ for thisBlockLoop in BlockLoop:
         routineForceEnded = False
         # update component parameters for each repeat
         # Run 'Begin Routine' code from TEST_IMG_CODE
+        test_seq_type = TEST_SEQ_TYPE
         
         # NOTE: 解釈性を優先 
         if test_pair_pat==1:
@@ -3133,7 +3442,7 @@ for thisBlockLoop in BlockLoop:
         TEST_IMG_RESP.rt = []
         _TEST_IMG_RESP_allKeys = []
         # keep track of which components have finished
-        TestChoiceComponents = [TEST_FIX1, 
+        TestChoiceComponents = [TEST_IMG_FIX, 
                                 TEST_IMG_LEFT, 
                                 TEST_IMG_RIGHT, 
                                 TEST_IMG_RESP]
@@ -3161,25 +3470,25 @@ for thisBlockLoop in BlockLoop:
             # update/draw components on each frame
             
             """============================================================="""
-            # *TEST_FIX1* updates
-            if TEST_FIX1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # *TEST_IMG_FIX* updates
+            if TEST_IMG_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                 # keep track of start time/frame for later
-                TEST_FIX1.frameNStart = frameN  # exact frame index
-                TEST_FIX1.tStart = t  # local t and not account for scr refresh
-                TEST_FIX1.tStartRefresh = tThisFlipGlobal  # on global time
-                win.timeOnFlip(TEST_FIX1, 'tStartRefresh')  # time at next scr refresh
+                TEST_IMG_FIX.frameNStart = frameN  # exact frame index
+                TEST_IMG_FIX.tStart = t  # local t and not account for scr refresh
+                TEST_IMG_FIX.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(TEST_IMG_FIX, 'tStartRefresh')  # time at next scr refresh
                 # add timestamp to datafile
-                thisExp.timestampOnFlip(win, 'TEST_FIX1.started')
-                TEST_FIX1.setAutoDraw(True)
-            if TEST_FIX1.status == STARTED:
+                thisExp.timestampOnFlip(win, 'TEST_IMG_FIX.started')
+                TEST_IMG_FIX.setAutoDraw(True)
+            if TEST_IMG_FIX.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > TEST_FIX1.tStartRefresh + IMG_TIME+FIXATION_TIME-frameTolerance:
+                if tThisFlipGlobal > TEST_IMG_FIX.tStartRefresh + IMG_TIME+FIXATION_TIME-frameTolerance:
                     # keep track of stop time/frame for later
-                    TEST_FIX1.tStop = t  # not accounting for scr refresh
-                    TEST_FIX1.frameNStop = frameN  # exact frame index
+                    TEST_IMG_FIX.tStop = t  # not accounting for scr refresh
+                    TEST_IMG_FIX.frameNStop = frameN  # exact frame index
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'TEST_FIX1.stopped')
-                    TEST_FIX1.setAutoDraw(False)
+                    thisExp.timestampOnFlip(win, 'TEST_IMG_FIX.stopped')
+                    TEST_IMG_FIX.setAutoDraw(False)
             
             """============================================================="""
             # *TEST_IMG_LEFT* updates
@@ -3264,9 +3573,8 @@ for thisBlockLoop in BlockLoop:
             
             """============================================================="""
             # check for quit (typically the Esc key)
-            # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-            #     core.quit()
-            if endExpNow:
+            if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+            # if endExpNow:
                 core.quit()
             
             # check if all components have finished
@@ -3294,7 +3602,7 @@ for thisBlockLoop in BlockLoop:
         t_img_resp = onset.getTime()
         
         # Initialize in case skipping slf-conf
-        test_conf = 0
+        test_conf = 'none'
         t_conf_pres = 0
         t_conf_resp = 0
         is_test_resp = 0
@@ -3360,7 +3668,7 @@ for thisBlockLoop in BlockLoop:
         TEST_IMGFB_IMG_LEFT.setImage(test_img_left)
         TEST_IMGFB_IMG_RIGHT.setImage(test_img_right)
         # keep track of which components have finished
-        TestChoiceFbComponents = [TEST_FIX2, 
+        TestChoiceFbComponents = [TEST_IMGFB_FIX, 
                                   TEST_IMGFB_FRAME, 
                                   TEST_IMGFB_IMG_LEFT, 
                                   TEST_IMGFB_IMG_RIGHT]
@@ -3388,25 +3696,25 @@ for thisBlockLoop in BlockLoop:
             # update/draw components on each frame
             
             """============================================================="""
-            # *TEST_FIX2* updates
-            if TEST_FIX2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+            # *TEST_IMGFB_FIX* updates
+            if TEST_IMGFB_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                 # keep track of start time/frame for later
-                TEST_FIX2.frameNStart = frameN  # exact frame index
-                TEST_FIX2.tStart = t  # local t and not account for scr refresh
-                TEST_FIX2.tStartRefresh = tThisFlipGlobal  # on global time
-                win.timeOnFlip(TEST_FIX2, 'tStartRefresh')  # time at next scr refresh
+                TEST_IMGFB_FIX.frameNStart = frameN  # exact frame index
+                TEST_IMGFB_FIX.tStart = t  # local t and not account for scr refresh
+                TEST_IMGFB_FIX.tStartRefresh = tThisFlipGlobal  # on global time
+                win.timeOnFlip(TEST_IMGFB_FIX, 'tStartRefresh')  # time at next scr refresh
                 # add timestamp to datafile
-                thisExp.timestampOnFlip(win, 'TEST_FIX2.started')
-                TEST_FIX2.setAutoDraw(True)
-            if TEST_FIX2.status == STARTED:
+                thisExp.timestampOnFlip(win, 'TEST_IMGFB_FIX.started')
+                TEST_IMGFB_FIX.setAutoDraw(True)
+            if TEST_IMGFB_FIX.status == STARTED:
                 # is it time to stop? (based on global clock, using actual start)
-                if tThisFlipGlobal > TEST_FIX2.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                if tThisFlipGlobal > TEST_IMGFB_FIX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
                     # keep track of stop time/frame for later
-                    TEST_FIX2.tStop = t  # not accounting for scr refresh
-                    TEST_FIX2.frameNStop = frameN  # exact frame index
+                    TEST_IMGFB_FIX.tStop = t  # not accounting for scr refresh
+                    TEST_IMGFB_FIX.frameNStop = frameN  # exact frame index
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'TEST_FIX2.stopped')
-                    TEST_FIX2.setAutoDraw(False)
+                    thisExp.timestampOnFlip(win, 'TEST_IMGFB_FIX.stopped')
+                    TEST_IMGFB_FIX.setAutoDraw(False)
             
             """============================================================="""
             # *TEST_IMGFB_FRAME* updates
@@ -3473,9 +3781,8 @@ for thisBlockLoop in BlockLoop:
             
             """============================================================="""
             # check for quit (typically the Esc key)
-            # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-            #     core.quit()
-            if endExpNow:
+            if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+            # if endExpNow:
                 core.quit()
             
             # check if all components have finished
@@ -3527,6 +3834,21 @@ for thisBlockLoop in BlockLoop:
             continueRoutine = True
             routineForceEnded = False
             # update component parameters for each repeat
+            if test_conf_pat == 1:
+                test_conf_left = CONF_LOW
+                test_conf_right = CONF_HIGH
+                test_conf_low_pos = CONF_POS_LEFT
+                test_conf_high_pos = CONF_POS_RIGHT
+            else:
+                test_conf_left = CONF_HIGH
+                test_conf_right = CONF_LOW
+                test_conf_low_pos = CONF_POS_RIGHT
+                test_conf_high_pos = CONF_POS_LEFT
+
+            TEST_CONF_LOW_BOX.setPos(test_conf_low_pos)
+            TEST_CONF_LOW_TEXT.setPos(test_conf_low_pos)
+            TEST_CONF_HIGH_BOX.setPos(test_conf_high_pos)
+            TEST_CONF_HIGH_TEXT.setPos(test_conf_high_pos)
             # Run 'Begin Routine' code from TEST_CONF_CODE
             # Get the presented time in test-confidence
             t_conf_pres = onset.getTime()
@@ -3534,7 +3856,8 @@ for thisBlockLoop in BlockLoop:
             TEST_CONF_RESP.rt = []
             _TEST_CONF_RESP_allKeys = []
             # keep track of which components have finished
-            TestConfComponents = [TEST_CONF_LOW_BOX, 
+            TestConfComponents = [TEST_CONF_FIX, 
+                                  TEST_CONF_LOW_BOX, 
                                   TEST_CONF_LOW_TEXT, 
                                   TEST_CONF_HIGH_BOX, 
                                   TEST_CONF_HIGH_TEXT, 
@@ -3562,6 +3885,27 @@ for thisBlockLoop in BlockLoop:
                 tThisFlipGlobal = win.getFutureFlipTime(clock=None)
                 frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
                 # update/draw components on each frame
+                
+                """============================================================="""
+                # *TEST_CONF_FIX* updates
+                if TEST_CONF_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                    # keep track of start time/frame for later
+                    TEST_CONF_FIX.frameNStart = frameN  # exact frame index
+                    TEST_CONF_FIX.tStart = t  # local t and not account for scr refresh
+                    TEST_CONF_FIX.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(TEST_CONF_FIX, 'tStartRefresh')  # time at next scr refresh
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'TEST_CONF_FIX.started')
+                    TEST_CONF_FIX.setAutoDraw(True)
+                if TEST_CONF_FIX.status == STARTED:
+                    # is it time to stop? (based on global clock, using actual start)
+                    if tThisFlipGlobal > TEST_CONF_FIX.tStartRefresh + CONF_TIME-frameTolerance:
+                        # keep track of stop time/frame for later
+                        TEST_CONF_FIX.tStop = t  # not accounting for scr refresh
+                        TEST_CONF_FIX.frameNStop = frameN  # exact frame index
+                        # add timestamp to datafile
+                        thisExp.timestampOnFlip(win, 'TEST_CONF_FIX.stopped')
+                        TEST_CONF_FIX.setAutoDraw(False)
                 
                 """============================================================="""
                 # *TEST_CONF_LOW_BOX* updates
@@ -3683,9 +4027,8 @@ for thisBlockLoop in BlockLoop:
                 
                 """============================================================="""
                 # check for quit (typically the Esc key)
-                # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-                #     core.quit()
-                if endExpNow:
+                if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+                # if endExpNow:
                     core.quit()
                 
                 # check if all components have finished
@@ -3715,10 +4058,10 @@ for thisBlockLoop in BlockLoop:
             # Receive confidence responses in test and determine feedback parameters
             if TEST_CONF_RESP.keys == left_key: 
                 test_conf_fb_pos = CONF_POS_LEFT
-                test_conf = CONF_LOW
+                test_conf = test_conf_left
             elif TEST_CONF_RESP.keys == right_key: 
                 test_conf_fb_pos = CONF_POS_RIGHT
-                test_conf = CONF_HIGH
+                test_conf = test_conf_right
             else:
                 test_conf_fb_pos = CONF_POS_OUT
                 test_conf = CONF_NONE
@@ -3738,12 +4081,17 @@ for thisBlockLoop in BlockLoop:
             routineForceEnded = False
             # update component parameters for each repeat
             TEST_CONFFB_FRAME.setPos(test_conf_fb_pos)
+            TEST_CONFFB_LOW_BOX.setPos(test_conf_low_pos)
+            TEST_CONFFB_LOW_TEXT.setPos(test_conf_low_pos)
+            TEST_CONFFB_HIGH_BOX.setPos(test_conf_high_pos)
+            TEST_CONFFB_HIGH_TEXT.setPos(test_conf_high_pos)
             # keep track of which components have finished
-            TestConfFbComponents = [TEST_CONFFB_FRAME, 
-                                    TEST_CONFFB_CONF_LOW_BOX, 
-                                    TEST_CONFFB_CONF_LOW_TEXT, 
-                                    TEST_CONFFB_CONF_HIGH_BOX, 
-                                    TEST_CONFFB_CONF_HIGH_TEXT]
+            TestConfFbComponents = [TEST_CONFFB_FIX,
+                                    TEST_CONFFB_FRAME, 
+                                    TEST_CONFFB_LOW_BOX, 
+                                    TEST_CONFFB_LOW_TEXT, 
+                                    TEST_CONFFB_HIGH_BOX, 
+                                    TEST_CONFFB_HIGH_TEXT]
             
             for thisComponent in TestConfFbComponents:
                 thisComponent.tStart = None
@@ -3769,6 +4117,27 @@ for thisBlockLoop in BlockLoop:
                 # update/draw components on each frame
                 
                 """============================================================="""
+                # *TEST_CONFFB_FIX* updates
+                if TEST_CONFFB_FIX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                    # keep track of start time/frame for later
+                    TEST_CONFFB_FIX.frameNStart = frameN  # exact frame index
+                    TEST_CONFFB_FIX.tStart = t  # local t and not account for scr refresh
+                    TEST_CONFFB_FIX.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(TEST_CONFFB_FIX, 'tStartRefresh')  # time at next scr refresh
+                    # add timestamp to datafile
+                    thisExp.timestampOnFlip(win, 'TEST_CONFFB_FIX.started')
+                    TEST_CONFFB_FIX.setAutoDraw(True)
+                if TEST_CONFFB_FIX.status == STARTED:
+                    # is it time to stop? (based on global clock, using actual start)
+                    if tThisFlipGlobal > TEST_CONFFB_FIX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                        # keep track of stop time/frame for later
+                        TEST_CONFFB_FIX.tStop = t  # not accounting for scr refresh
+                        TEST_CONFFB_FIX.frameNStop = frameN  # exact frame index
+                        # add timestamp to datafile
+                        thisExp.timestampOnFlip(win, 'TEST_CONFFB_FIX.stopped')
+                        TEST_CONFFB_FIX.setAutoDraw(False)
+                
+                """============================================================="""
                 # *TEST_CONFFB_FRAME* updates
                 if TEST_CONFFB_FRAME.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                     # keep track of start time/frame for later
@@ -3790,95 +4159,95 @@ for thisBlockLoop in BlockLoop:
                         TEST_CONFFB_FRAME.setAutoDraw(False)
                 
                 """============================================================="""
-                # *TEST_CONFFB_CONF_LOW_BOX* updates
-                if TEST_CONFFB_CONF_LOW_BOX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # *TEST_CONFFB_LOW_BOX* updates
+                if TEST_CONFFB_LOW_BOX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                     # keep track of start time/frame for later
-                    TEST_CONFFB_CONF_LOW_BOX.frameNStart = frameN  # exact frame index
-                    TEST_CONFFB_CONF_LOW_BOX.tStart = t  # local t and not account for scr refresh
-                    TEST_CONFFB_CONF_LOW_BOX.tStartRefresh = tThisFlipGlobal  # on global time
-                    win.timeOnFlip(TEST_CONFFB_CONF_LOW_BOX, 'tStartRefresh')  # time at next scr refresh
+                    TEST_CONFFB_LOW_BOX.frameNStart = frameN  # exact frame index
+                    TEST_CONFFB_LOW_BOX.tStart = t  # local t and not account for scr refresh
+                    TEST_CONFFB_LOW_BOX.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(TEST_CONFFB_LOW_BOX, 'tStartRefresh')  # time at next scr refresh
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'TEST_CONFFB_CONF_LOW_BOX.started')
-                    TEST_CONFFB_CONF_LOW_BOX.setAutoDraw(True)
-                if TEST_CONFFB_CONF_LOW_BOX.status == STARTED:
+                    thisExp.timestampOnFlip(win, 'TEST_CONFFB_LOW_BOX.started')
+                    TEST_CONFFB_LOW_BOX.setAutoDraw(True)
+                if TEST_CONFFB_LOW_BOX.status == STARTED:
                     # is it time to stop? (based on global clock, using actual start)
-                    if tThisFlipGlobal > TEST_CONFFB_CONF_LOW_BOX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                    if tThisFlipGlobal > TEST_CONFFB_LOW_BOX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
                         # keep track of stop time/frame for later
-                        TEST_CONFFB_CONF_LOW_BOX.tStop = t  # not accounting for scr refresh
-                        TEST_CONFFB_CONF_LOW_BOX.frameNStop = frameN  # exact frame index
+                        TEST_CONFFB_LOW_BOX.tStop = t  # not accounting for scr refresh
+                        TEST_CONFFB_LOW_BOX.frameNStop = frameN  # exact frame index
                         # add timestamp to datafile
-                        thisExp.timestampOnFlip(win, 'TEST_CONFFB_CONF_LOW_BOX.stopped')
-                        TEST_CONFFB_CONF_LOW_BOX.setAutoDraw(False)
+                        thisExp.timestampOnFlip(win, 'TEST_CONFFB_LOW_BOX.stopped')
+                        TEST_CONFFB_LOW_BOX.setAutoDraw(False)
                 
                 """============================================================="""
-                # *TEST_CONFFB_CONF_LOW_TEXT* updates
-                if TEST_CONFFB_CONF_LOW_TEXT.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # *TEST_CONFFB_LOW_TEXT* updates
+                if TEST_CONFFB_LOW_TEXT.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                     # keep track of start time/frame for later
-                    TEST_CONFFB_CONF_LOW_TEXT.frameNStart = frameN  # exact frame index
-                    TEST_CONFFB_CONF_LOW_TEXT.tStart = t  # local t and not account for scr refresh
-                    TEST_CONFFB_CONF_LOW_TEXT.tStartRefresh = tThisFlipGlobal  # on global time
-                    win.timeOnFlip(TEST_CONFFB_CONF_LOW_TEXT, 'tStartRefresh')  # time at next scr refresh
+                    TEST_CONFFB_LOW_TEXT.frameNStart = frameN  # exact frame index
+                    TEST_CONFFB_LOW_TEXT.tStart = t  # local t and not account for scr refresh
+                    TEST_CONFFB_LOW_TEXT.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(TEST_CONFFB_LOW_TEXT, 'tStartRefresh')  # time at next scr refresh
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'TEST_CONFFB_CONF_LOW_TEXT.started')
-                    TEST_CONFFB_CONF_LOW_TEXT.setAutoDraw(True)
-                if TEST_CONFFB_CONF_LOW_TEXT.status == STARTED:
+                    thisExp.timestampOnFlip(win, 'TEST_CONFFB_LOW_TEXT.started')
+                    TEST_CONFFB_LOW_TEXT.setAutoDraw(True)
+                if TEST_CONFFB_LOW_TEXT.status == STARTED:
                     # is it time to stop? (based on global clock, using actual start)
-                    if tThisFlipGlobal > TEST_CONFFB_CONF_LOW_TEXT.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                    if tThisFlipGlobal > TEST_CONFFB_LOW_TEXT.tStartRefresh + FEEDBACK_TIME-frameTolerance:
                         # keep track of stop time/frame for later
-                        TEST_CONFFB_CONF_LOW_TEXT.tStop = t  # not accounting for scr refresh
-                        TEST_CONFFB_CONF_LOW_TEXT.frameNStop = frameN  # exact frame index
+                        TEST_CONFFB_LOW_TEXT.tStop = t  # not accounting for scr refresh
+                        TEST_CONFFB_LOW_TEXT.frameNStop = frameN  # exact frame index
                         # add timestamp to datafile
-                        thisExp.timestampOnFlip(win, 'TEST_CONFFB_CONF_LOW_TEXT.stopped')
-                        TEST_CONFFB_CONF_LOW_TEXT.setAutoDraw(False)
+                        thisExp.timestampOnFlip(win, 'TEST_CONFFB_LOW_TEXT.stopped')
+                        TEST_CONFFB_LOW_TEXT.setAutoDraw(False)
                 
                 """============================================================="""
-                # *TEST_CONFFB_CONF_HIGH_BOX* updates
-                if TEST_CONFFB_CONF_HIGH_BOX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # *TEST_CONFFB_HIGH_BOX* updates
+                if TEST_CONFFB_HIGH_BOX.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                     # keep track of start time/frame for later
-                    TEST_CONFFB_CONF_HIGH_BOX.frameNStart = frameN  # exact frame index
-                    TEST_CONFFB_CONF_HIGH_BOX.tStart = t  # local t and not account for scr refresh
-                    TEST_CONFFB_CONF_HIGH_BOX.tStartRefresh = tThisFlipGlobal  # on global time
-                    win.timeOnFlip(TEST_CONFFB_CONF_HIGH_BOX, 'tStartRefresh')  # time at next scr refresh
+                    TEST_CONFFB_HIGH_BOX.frameNStart = frameN  # exact frame index
+                    TEST_CONFFB_HIGH_BOX.tStart = t  # local t and not account for scr refresh
+                    TEST_CONFFB_HIGH_BOX.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(TEST_CONFFB_HIGH_BOX, 'tStartRefresh')  # time at next scr refresh
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'TEST_CONFFB_CONF_HIGH_BOX.started')
-                    TEST_CONFFB_CONF_HIGH_BOX.setAutoDraw(True)
-                if TEST_CONFFB_CONF_HIGH_BOX.status == STARTED:
+                    thisExp.timestampOnFlip(win, 'TEST_CONFFB_HIGH_BOX.started')
+                    TEST_CONFFB_HIGH_BOX.setAutoDraw(True)
+                if TEST_CONFFB_HIGH_BOX.status == STARTED:
                     # is it time to stop? (based on global clock, using actual start)
-                    if tThisFlipGlobal > TEST_CONFFB_CONF_HIGH_BOX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                    if tThisFlipGlobal > TEST_CONFFB_HIGH_BOX.tStartRefresh + FEEDBACK_TIME-frameTolerance:
                         # keep track of stop time/frame for later
-                        TEST_CONFFB_CONF_HIGH_BOX.tStop = t  # not accounting for scr refresh
-                        TEST_CONFFB_CONF_HIGH_BOX.frameNStop = frameN  # exact frame index
+                        TEST_CONFFB_HIGH_BOX.tStop = t  # not accounting for scr refresh
+                        TEST_CONFFB_HIGH_BOX.frameNStop = frameN  # exact frame index
                         # add timestamp to datafile
-                        thisExp.timestampOnFlip(win, 'TEST_CONFFB_CONF_HIGH_BOX.stopped')
-                        TEST_CONFFB_CONF_HIGH_BOX.setAutoDraw(False)
+                        thisExp.timestampOnFlip(win, 'TEST_CONFFB_HIGH_BOX.stopped')
+                        TEST_CONFFB_HIGH_BOX.setAutoDraw(False)
                 
                 """============================================================="""
-                # *TEST_CONFFB_CONF_HIGH_TEXT* updates
-                if TEST_CONFFB_CONF_HIGH_TEXT.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+                # *TEST_CONFFB_HIGH_TEXT* updates
+                if TEST_CONFFB_HIGH_TEXT.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
                     # keep track of start time/frame for later
-                    TEST_CONFFB_CONF_HIGH_TEXT.frameNStart = frameN  # exact frame index
-                    TEST_CONFFB_CONF_HIGH_TEXT.tStart = t  # local t and not account for scr refresh
-                    TEST_CONFFB_CONF_HIGH_TEXT.tStartRefresh = tThisFlipGlobal  # on global time
-                    win.timeOnFlip(TEST_CONFFB_CONF_HIGH_TEXT, 'tStartRefresh')  # time at next scr refresh
+                    TEST_CONFFB_HIGH_TEXT.frameNStart = frameN  # exact frame index
+                    TEST_CONFFB_HIGH_TEXT.tStart = t  # local t and not account for scr refresh
+                    TEST_CONFFB_HIGH_TEXT.tStartRefresh = tThisFlipGlobal  # on global time
+                    win.timeOnFlip(TEST_CONFFB_HIGH_TEXT, 'tStartRefresh')  # time at next scr refresh
                     # add timestamp to datafile
-                    thisExp.timestampOnFlip(win, 'TEST_CONFFB_CONF_HIGH_TEXT.started')
-                    TEST_CONFFB_CONF_HIGH_TEXT.setAutoDraw(True)
-                if TEST_CONFFB_CONF_HIGH_TEXT.status == STARTED:
+                    thisExp.timestampOnFlip(win, 'TEST_CONFFB_HIGH_TEXT.started')
+                    TEST_CONFFB_HIGH_TEXT.setAutoDraw(True)
+                if TEST_CONFFB_HIGH_TEXT.status == STARTED:
                     # is it time to stop? (based on global clock, using actual start)
-                    if tThisFlipGlobal > TEST_CONFFB_CONF_HIGH_TEXT.tStartRefresh + FEEDBACK_TIME-frameTolerance:
+                    if tThisFlipGlobal > TEST_CONFFB_HIGH_TEXT.tStartRefresh + FEEDBACK_TIME-frameTolerance:
                         # keep track of stop time/frame for later
-                        TEST_CONFFB_CONF_HIGH_TEXT.tStop = t  # not accounting for scr refresh
-                        TEST_CONFFB_CONF_HIGH_TEXT.frameNStop = frameN  # exact frame index
+                        TEST_CONFFB_HIGH_TEXT.tStop = t  # not accounting for scr refresh
+                        TEST_CONFFB_HIGH_TEXT.frameNStop = frameN  # exact frame index
                         # add timestamp to datafile
-                        thisExp.timestampOnFlip(win, 'TEST_CONFFB_CONF_HIGH_TEXT.stopped')
-                        TEST_CONFFB_CONF_HIGH_TEXT.setAutoDraw(False)
+                        thisExp.timestampOnFlip(win, 'TEST_CONFFB_HIGH_TEXT.stopped')
+                        TEST_CONFFB_HIGH_TEXT.setAutoDraw(False)
                 
                 """============================================================="""
                 # check for quit (typically the Esc key)
-                # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-                #     core.quit()
-                if endExpNow:
+                if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
                     core.quit()
+                # if endExpNow:
+                #     core.quit()
                 
                 # check if all components have finished
                 if not continueRoutine:  # a component has requested a forced-end of Routine
@@ -4047,9 +4416,8 @@ for thisBlockLoop in BlockLoop:
             
             """============================================================="""
             # check for quit (typically the Esc key)
-            # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-            #     core.quit()
-            if endExpNow:
+            if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+            # if endExpNow:
                 core.quit()
             
             # check if all components have finished
@@ -4088,7 +4456,7 @@ for thisBlockLoop in BlockLoop:
                                 test_idx_left, test_idx_right, 
                                 test_pos_correct, test_mean_correct, test_idx_correct,
                                 test_pos_chosen, test_mean_chosen, test_idx_chosen,
-                                test_conf, test_acc, test_reward,
+                                test_conf_pat, test_conf, test_acc, test_reward,
                                 np.round(test_img_time,3), np.round(test_conf_time,3),
                                 np.round(t_img_pres,3), np.round(t_img_resp,3),
                                 np.round(t_conf_pres, 3), np.round(t_conf_resp, 3), 
@@ -4099,7 +4467,7 @@ for thisBlockLoop in BlockLoop:
         test_sheet_name = out_book.sheetnames[2]
         test_sheet = out_book[test_sheet_name]
         for i in range(1, len(test_data_table[test_trial_cnt-1])+1):
-            test_sheet.cell(test_trial_cnt, i, value = test_data_table[test_trial_cnt-1][i-1])
+            test_sheet.cell(test_trial_cnt+1, i, value = test_data_table[test_trial_cnt-1][i-1])
         out_book.save(out_xlsx)
         
         # Update test-count
@@ -4132,11 +4500,9 @@ for thisBlockLoop in BlockLoop:
     routineForceEnded = False
     # update component parameters for each repeat
     # Run 'Begin Routine' code from BLOCK_REST_CODE
-    if block_cnt == 1:
-        message = '1 Block is over.\nTake a break.\nPress "space" to start next Block.'
-    elif block_cnt == 2:
-        message = '2 Block is over.\nTake a break.\nPress "space" to start next Block.' 
-    elif block_cnt == 3:
+    if block_cnt < BLOCK_NUM:
+        message = f'{block_cnt} Block is over.\nTake a break.\nPress "space" to start next Block.'
+    else:
         message = 'Game is over.\nPress "space" to exit.'
         
     BLOCK_REST_TEXT.setText(message)
@@ -4209,9 +4575,8 @@ for thisBlockLoop in BlockLoop:
         
         """============================================================="""
         # check for quit (typically the Esc key)
-        # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-        #     core.quit()
-        if endExpNow:
+        if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        # if endExpNow:
             core.quit()
         
         # check if all components have finished
@@ -4321,9 +4686,8 @@ while continueRoutine and routineTimer.getTime() < APPRECIATION_TIME:
     
     """============================================================="""
     # check for quit (typically the Esc key)
-    # if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
-    #     core.quit()
-    if endExpNow:
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+    # if endExpNow:
         core.quit()
     
     # check if all components have finished

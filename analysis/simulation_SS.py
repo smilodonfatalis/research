@@ -61,7 +61,7 @@ def main():
             # softmaxモデルの計算
             q_trial_slf = [0] * (img_size+1)
             q_block_slf = defaultdict(int)
-            calc.calc_q_slf(df_slf, q_trial_slf, q_block_slf, alpha, seq_size_slf*block_size)
+            calc.calc_q_train(df_slf, q_trial_slf, q_block_slf, alpha, seq_size_slf*block_size)
             log_like_softmax, p_softmax = calc.calc_log_like_test_ss_softmax(
                                                 df_test_ss, q_block_slf, beta, seq_size_test_ss*block_size
                                             )

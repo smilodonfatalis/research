@@ -1,0 +1,12 @@
+﻿slf_file,obs_file,test_file,n,BLOCK_REST_SKIP.keys_raw,BLOCK_REST_SKIP.rt_mean,BLOCK_REST_SKIP.rt_raw,BLOCK_REST_SKIP.rt_std,order
+slf41.xlsx,obs41.xlsx,test41.xlsx,1.0,'space',1.544491171836853,1.544491171836853,0.0,0.0
+slf42.xlsx,obs42.xlsx,test42.xlsx,1.0,'space',28.797348022460938,28.797348022460938,0.0,1.0
+slf43.xlsx,obs43.xlsx,test43.xlsx,1.0,'space',5.647600173950195,5.647600173950195,0.0,2.0
+slf44.xlsx,obs44.xlsx,test44.xlsx,1.0,'space',11.03799819946289,11.03799819946289,0.0,3.0
+
+extraInfo
+participant,shiga
+date,2023-06-28_17h13.44.965
+expName,Pattern_4
+psychopyVersion,2022.2.4
+frameRate,None

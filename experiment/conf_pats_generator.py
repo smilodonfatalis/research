@@ -8,13 +8,14 @@ import numpy as np
 from openpyxl import load_workbook
 import pandas as pd
 
-import template as tp
+import template_experiment as tp
 
 # NOTE: success seeds are '5, 8, 17, 20'
 SEED = 5
-GAME_PAT = 1
+GAME_PAT = 5
 BLOCK_NUM = 4
 SLF_TRIAL_NUM = 9
+OBS_TRIAL_NUM = 9
 TEST_TRIAL_NUM = 30
 MEAN = [30, 40, 50]
 SD = 7
@@ -47,6 +48,19 @@ def slf_write_excel(conf_pats, game_pat):
             ws[f'D{trial+2}'] = conf_pats[BLOCK_NUM*block+trial]
         wb.save(condition_file_path)
 
+
+def obs_write_excel(conf_pats, game_pat):
+
+    condition_dir_path = tp.get_condition_dir_path()
+    for block in range(BLOCK_NUM):
+        condition_file_path = f'{condition_dir_path}game{game_pat}/obs{game_pat}{block+1}.xlsx'
+        wb = load_workbook(condition_file_path)
+        ws = wb['condition']
+        for trial in range(SLF_TRIAL_NUM):
+            ws[f'D{trial+2}'] = conf_pats[BLOCK_NUM*block+trial]
+        wb.save(condition_file_path)
+
+
 def test_write_excel(conf_pats, game_pat):
 
     condition_dir_path = tp.get_condition_dir_path()
@@ -62,8 +76,10 @@ def test_write_excel(conf_pats, game_pat):
 def main():
     game_pat = GAME_PAT
     slf_conf_pats = conf_pats_generator(SLF_TRIAL_NUM)
+    obs_conf_pats = conf_pats_generator(OBS_TRIAL_NUM)
     test_conf_pats = conf_pats_generator(TEST_TRIAL_NUM)
     slf_write_excel(slf_conf_pats, game_pat)
+    obs_write_excel(obs_conf_pats, game_pat)
     test_write_excel(test_conf_pats, game_pat)
 
 

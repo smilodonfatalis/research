@@ -1,0 +1,9 @@
+﻿slf_file,obs_file,test_file,n,BLOCK_REST_SKIP.keys_raw,BLOCK_REST_SKIP.rt_mean,BLOCK_REST_SKIP.rt_raw,BLOCK_REST_SKIP.rt_std,order
+slfT.xlsx,obsT.xlsx,testT.xlsx,1.0,'space',3.8387255668640137,3.8387255668640137,0.0,0.0
+
+extraInfo
+participant,shiga
+date,2023-06-28_15h37.43.624
+expName,Pattern_1
+psychopyVersion,2022.2.4
+frameRate,None

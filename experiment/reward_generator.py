@@ -8,11 +8,12 @@ import numpy as np
 from openpyxl import load_workbook
 import pandas as pd
 
-import template as tp
+import template_experiment as tp
 
 # NOTE: success seeds are '5, 8, 17, 20'
-SEED = 20
-GAME_PAT = 4
+#                          training: 5  
+SEED = 5
+GAME_PAT = 5
 BLOCK_NUM = 4
 TRIAL_NUM = 9
 MEAN = [30, 40, 50]

@@ -13,7 +13,7 @@ import numpy as np
 import polars as pl
 
 # local
-import template as tp
+import template_analysis as tp
 
 
 seed = 0
@@ -147,6 +147,7 @@ def generate_individual_data_instance():
     subj_files = glob.glob(subj_file_path)
     subj_files.sort()
 
+
     param_file = tp.get_param_file_path()
     param = pl.read_excel(
                 param_file, 
@@ -157,10 +158,11 @@ def generate_individual_data_instance():
                 param.columns[param.find_idx_by_name('subj'):param.find_idx_by_name('log_likelihood')+1]
             )
 
-    individual  = [[None] for _ in range(subj_size+1)]
+    individual = [[None] for _ in range(subj_size+1)]
 
     for subj in range(1, subj_size+1):
         for pat in range(1, pat_size+1):
+            # print(f'{subj=}, {pat=}')
             individual[subj].append(Individual(subj_files[2*(subj-1) + (pat-1)], param, seq_label, subj, pat))
 
     return individual

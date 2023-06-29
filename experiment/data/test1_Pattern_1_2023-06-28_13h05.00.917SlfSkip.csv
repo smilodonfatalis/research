@@ -1,0 +1,9 @@
+﻿n,SLF_CONF_RESP.keys_raw,SLF_CONF_RESP.rt_mean,SLF_CONF_RESP.rt_raw,SLF_CONF_RESP.rt_std,order
+1.0,'right',0.03691912442445755,0.03691912442445755,0.0,0.0
+
+extraInfo
+participant,test1
+date,2023-06-28_13h05.00.917
+expName,Pattern_1
+psychopyVersion,2022.2.4
+frameRate,None

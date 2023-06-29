@@ -69,13 +69,14 @@ def calc_q_train(df_train, q_trial_train, q_block_train, alpha, trial_size_train
     """
     for trial in range(trial_size_train):
         reward = df_train[trial, 'reward']
-        idx_choice = df_train[trial, 'idx_choice']
+        idx_chosen = df_train[trial, 'idx_choice']
 
         # Update Q values
-        q_trial_train[idx_choice] += alpha * (reward - q_trial_train[idx_choice])
+        q_trial_train[idx_chosen] += alpha * (reward - q_trial_train[idx_chosen])
 
         if (trial+1)%12==0:
             q_block_train[(trial+1)//12] = q_trial_train.copy()
+
 
 
 def calc_log_like_test_ss_softmax(df_test, q_train, beta, trial_size):
