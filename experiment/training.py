@@ -30,26 +30,26 @@ import pandas as pd
 
 # Global variables
 WINDOW_SIZE = [960, 540]
-isFullScr = False
+isFullScr = True
 # Time
-TASK_TEST_TIME = 0.3
+TASK_TEST_TIME = 3
 IMG_TIME = TASK_TEST_TIME
 CONF_TIME = TASK_TEST_TIME
 REWARD_TIME = 2.0
-FEEDBACK_TIME = 1.0
+FEEDBACK_TIME = 2.0
 INSTR_TIME = TASK_TEST_TIME
 FIXATION_TIME = 0.5
 STANDBY_TIME = 3.0
 APPRECIATION_TIME = 5.0
 
-IMG_TIME = 5.0
-CONF_TIME = 3.0
-REWARD_TIME = 2.0
-FEEDBACK_TIME = 1.0
-INSTR_TIME = 2.0
-FIXATION_TIME = 0.5
-STANDBY_TIME = 3.0
-APPRECIATION_TIME = 5.0
+#IMG_TIME = 5.0
+#CONF_TIME = 3.0
+#REWARD_TIME = 2.0
+#FEEDBACK_TIME = 1.0
+#INSTR_TIME = 2.0
+#FIXATION_TIME = 0.5
+#STANDBY_TIME = 3.0
+#APPRECIATION_TIME = 5.0
 
 # Size and Position
 IMG_SIZE = (200, 200)
@@ -129,7 +129,7 @@ _thisDir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(_thisDir)
 # Store info about the experiment session
 psychopyVersion = '2022.2.4'
-expName = 'Pattern_1'  # from the Builder filename that created this script
+expName = 'Training'  # from the Builder filename that created this script
 expInfo = {
     'participant': 'test',
 }

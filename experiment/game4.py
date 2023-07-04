@@ -29,8 +29,9 @@ import pandas as pd
 
 
 # Global variables
+GAME_NUM = 4
 WINDOW_SIZE = [960, 540]
-isFullScr = True
+isFullScr = False
 # Time
 TASK_TEST_TIME = 0.3
 IMG_TIME = TASK_TEST_TIME
@@ -147,7 +148,7 @@ filename = _thisDir + os.sep + u'data/%s_%s_%s' % (expInfo['participant'], expNa
 # An ExperimentHandler isn't essential but helps with data saving
 thisExp = data.ExperimentHandler(name=expName, version='',
     extraInfo=expInfo, runtimeInfo=None,
-    originPath='/Users/strix_uralensis/Documents/Experiment/research/game4.py',
+    originPath=f'/Users/strix_uralensis/Documents/Experiment/research/game{GAME_NUM}.py',
     savePickle=True, saveWideText=True,
     dataFileName=filename)
 logging.console.setLevel(logging.WARNING)  # this outputs to the screen, not a file
@@ -239,13 +240,13 @@ test_img = TestImg(slf_img, obs_img)
 
 # Create files to store data
 get_current_time = datetime.datetime.now() # Get time in the form of "yyyy-mm-dd hh:mm:ss"
-out_name = f'subj_{participant}_game4_{get_current_time:%y%m%d%H%M}' 
+out_name = f'subj_{participant}_game{GAME_NUM}_{get_current_time:%y%m%d%H%M}' 
             # participant_yyyymmddというファイル名
 
 # Define sheet names and data table
-slf_sheet = 'slf1'
-obs_sheet = 'obs1'
-test_sheet = 'test1'
+slf_sheet = f'slf{GAME_NUM}'
+obs_sheet = f'obs{GAME_NUM}'
+test_sheet = f'test{GAME_NUM}'
 
 slf_data_table =  []
 obs_data_table =  []
@@ -1216,7 +1217,7 @@ routineTimer.reset()
 BlockLoop = data.TrialHandler(
     nReps=1.0, method='sequential', 
     extraInfo=expInfo, originPath=-1,
-    trialList=data.importConditions('sequences/game4/condition4.xlsx'),
+    trialList=data.importConditions(f'sequences/game{GAME_NUM}/condition4.xlsx'),
     seed=None, name='BlockLoop')
 thisExp.addLoop(BlockLoop)  # add the loop to the experiment
 thisBlockLoop = BlockLoop.trialList[0]  # so we can initialise stimuli with some values
@@ -1350,7 +1351,7 @@ for thisBlockLoop in BlockLoop:
     ObsSequence = data.TrialHandler(
         nReps=1.0, method='sequential', 
         extraInfo=expInfo, originPath=-1,
-        trialList=data.importConditions('sequences/game4/' + obs_file),
+        trialList=data.importConditions(f'sequences/game{GAME_NUM}/' + obs_file),
         seed=None, name='ObsSequence')
     thisExp.addLoop(ObsSequence)  # add the loop to the experiment
     thisObsSequence = ObsSequence.trialList[0]  # so we can initialise stimuli with some values
@@ -2103,7 +2104,7 @@ for thisBlockLoop in BlockLoop:
     SlfSequence = data.TrialHandler(
         nReps=1.0, method='sequential', 
         extraInfo=expInfo, originPath=-1,
-        trialList=data.importConditions('sequences/game4/' + slf_file),
+        trialList=data.importConditions(f'sequences/game{GAME_NUM}/' + slf_file),
         seed=None, name='SlfSequence')
     thisExp.addLoop(SlfSequence)  # add the loop to the experiment
     thisSlfSequence = SlfSequence.trialList[0]  # so we can initialise stimuli with some values
@@ -3345,7 +3346,7 @@ for thisBlockLoop in BlockLoop:
     TestSequence = data.TrialHandler(
         nReps=1.0, method='sequential', 
         extraInfo=expInfo, originPath=-1,
-        trialList=data.importConditions('sequences/game4/' + test_file), # ok
+        trialList=data.importConditions(f'sequences/game{GAME_NUM}/' + test_file), # ok
         seed=None, name='TestSequence')
     thisExp.addLoop(TestSequence)  # add the loop to the experiment
     thisTestSequence = TestSequence.trialList[0]  # so we can initialise stimuli with some values
